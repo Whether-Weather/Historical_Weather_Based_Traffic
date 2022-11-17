@@ -1,13 +1,14 @@
-
-
-# from src import file_helper_functions as fhf
-# from ...src.
-
+import sys
 import os
-print(os.getcwd())
 
-# from ...src.python.file_helper_functions import get_dict_from_json 
+from utils import file_helper_functions as fhf
 
-# x = get_dict_from_json("data/created_data/inrix/new_segment_dict.json")
+def test():
+    test = {}
+    test['hello'] = "bla"
+    x = fhf.dict_to_array(test)
+    print(x)
 
 
+if __name__ == "__main__":
+    test()

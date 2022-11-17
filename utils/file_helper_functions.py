@@ -1,12 +1,16 @@
+#These are file helper functions that are helpufl for translating structures
 import json
 import csv
+import os
 
-def get_dict_from_json(file_name):
+
+
+def read_dict_from_json(file_name):
     with open(file_name) as json_file:
         data = json.load(json_file)
         return data
 
-def dict_to_json(big_dict, file_name):
+def write_dict_to_json(big_dict, file_name):
     with open(file_name, 'w') as fp:
         json.dump(big_dict, fp)
 
