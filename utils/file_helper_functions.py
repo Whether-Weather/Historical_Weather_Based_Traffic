@@ -5,7 +5,7 @@ import os
 
 
 
-def read_dict_from_json(file_name):
+def get_dict_from_json(file_name):
     with open(file_name) as json_file:
         data = json.load(json_file)
         return data
@@ -26,3 +26,9 @@ def list_to_csv(csvlist, filename):
         #csv_out.writerow(['Segment ID'])
         for element in csvlist:
             csv_out.writerow(str(element))
+
+def csv_to_list(filename):
+    with open(filename, newline='') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+    return data
