@@ -7,7 +7,7 @@ import math
 
 
 def segid_date_jsonfile():
-     #get inrix speed data (straight from data downloader)
+    #get inrix speed data (straight from data downloader)
     df = pd.read_csv("data/input_data/inrix/washpart1.csv")
     df2 = pd.read_csv("data/input_data/inrix/washpart2.csv")
 
