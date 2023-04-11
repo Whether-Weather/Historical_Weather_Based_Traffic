@@ -17,5 +17,6 @@ venv/
 
 *.json
 *.csv
+*.zip
 
 __pycache__
