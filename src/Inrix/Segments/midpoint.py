@@ -1,8 +1,15 @@
 import csv
 import json
 
+import sys
+from pathlib import Path
+
+gen_dir = str(Path(__file__).resolve().parents[3])
+if gen_dir not in sys.path:
+    sys.path.append(gen_dir)
+
 # Open the CSV file and read the data
-with open('metadata.csv', 'r') as f:
+with open(gen_dir + '/data/input_data/inrix/SantaClara/santa_clara_2022-04-01_to_2022-06-01_60_min_part_1/metadata.csv', 'r') as f:
     reader = csv.DictReader(f)
     data = list(reader)
 
@@ -16,6 +23,6 @@ for row in data:
     midpoint = (mid_lat, mid_lon)
     midpoints[row['Segment ID']] = midpoint
 
-with open('midpoints.json', 'w') as fp:
+with open(gen_dir + '/data/created_data/inrix/midpoints.json', 'w') as fp:
         json.dump(midpoints, fp)
 
