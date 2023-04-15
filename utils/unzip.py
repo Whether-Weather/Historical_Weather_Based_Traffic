@@ -29,9 +29,6 @@ def read_and_combine_csvs_from_zips(folder_path = '/Users/joshkelleran/SeniorDes
     return combined_df
 
 
-def haha():
-    print("hello")
-
 # Example usage
 if __name__ == '__main__':
     folder_path = '/Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/input_data/inrix/SantaClara'
