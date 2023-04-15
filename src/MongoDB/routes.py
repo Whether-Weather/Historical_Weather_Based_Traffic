@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Body, Request, Response, HTTPException, status
-from fastapi.encoders import jsonable_encoder
 from typing import List
 
+from fastapi import APIRouter, Body, HTTPException, Request, Response, status
+from fastapi.encoders import jsonable_encoder
 from models import SegmentData, SegmentDataUpdate
 
 router = APIRouter()
