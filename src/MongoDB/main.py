@@ -1,5 +1,5 @@
-from fastapi import FastAPI
 from dotenv import dotenv_values
+from fastapi import FastAPI
 from pymongo import MongoClient
 from routes import router as seg_router
 
@@ -19,3 +19,6 @@ def shutdown_db_client():
     app.mongodb_client.close()
 
 app.include_router(seg_router, tags=["segments"], prefix="/seg")
+
+
+print(seg_router)
