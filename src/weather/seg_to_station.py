@@ -1,19 +1,25 @@
 import sys
 from pathlib import Path
-from meteostat import Stations, Daily
+
+from meteostat import Daily, Stations
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
     sys.path.append(gen_dir)
 
-from utils import file_helper_functions as fhf
+import time
+
 from geopy.distance import great_circle
-import time 
+
+from utils import file_helper_functions as fhf
+
+santa_clara_input_coords = (37.3541, -121.9552)
+
 
 
 segment_To_Weather = {}
 def find_station():
-    input_coordinates = (37.3541, -121.9552)
+    input_coordinates = santa_clara_input_coords
     # Find 20 closest stations
     stations = Stations()
     nearby_stations = stations.nearby(*input_coordinates)

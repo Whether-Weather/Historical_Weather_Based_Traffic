@@ -1,15 +1,13 @@
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
-import pandas as pd
-import pickle
 import datetime
-
-
+import pickle
 import sys
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
