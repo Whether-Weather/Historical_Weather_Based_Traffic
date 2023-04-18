@@ -35,7 +35,8 @@ for segment_id, segment_data in grouped_data:
     segment_data = segment_data.fillna(0)
 
     # X = segment_data[['prcp', 'snow', 'temp']]
-    X = segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco']]
+    # X = segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco']]
+    X = segment_data[['prcp']]
     y = segment_data['Speed(km/hour)']
 
     # Split the data into training and test sets

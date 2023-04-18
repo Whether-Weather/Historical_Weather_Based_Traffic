@@ -14,12 +14,12 @@ from geopy.distance import great_circle
 from utils import file_helper_functions as fhf
 
 santa_clara_input_coords = (37.3541, -121.9552)
-
+seattle_input_coords = (47.6062, -122.3321)
 
 
 segment_To_Weather = {}
 def find_station():
-    input_coordinates = santa_clara_input_coords
+    input_coordinates = seattle_input_coords
     # Find 20 closest stations
     stations = Stations()
     nearby_stations = stations.nearby(*input_coordinates)
@@ -51,6 +51,6 @@ def find_closest_station(input_coords, station_coords_list):
 
 
 if __name__ == '__main__':
-    segment_dict = fhf.get_dict_from_json(gen_dir + "/data/created_data/inrix/midpoints.json")
+    segment_dict = fhf.get_dict_from_json(gen_dir + "/data/created_data/input_data/inrix/midpoints_seattle.json")
     find_station()
-    fhf.write_dict_to_json(segment_To_Weather, gen_dir + "/data/created_data/inrix/segid_to_weather.json")
+    fhf.write_dict_to_json(segment_To_Weather, gen_dir + "/data/created_data/input_data/inrix/Seattle/segid_to_weather.json")

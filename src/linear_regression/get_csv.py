@@ -1,26 +1,27 @@
-import os
-import json
 import datetime
-import pandas as pd
-from meteostat import Stations, Daily
+import json
+import os
 import sys
-from pathlib import Path
 import time
+from pathlib import Path
+
+import pandas as pd
+from meteostat import Daily, Stations
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
     sys.path.append(gen_dir)
 
 
-from utils import unzip as uz
-from utils import file_helper_functions as fhf
-from src.weather import getMeteostat as gm
-
 import datetime
 
-weather_dict = fhf.get_dict_from_json(gen_dir + "/data/created_data/weather/meteostat_weather_part2.json")
-segment_dict = fhf.get_dict_from_json(gen_dir + "/data/created_data/inrix/midpoints.json")
-seg_to_station = fhf.get_dict_from_json(gen_dir + "/data/created_data/inrix/segid_to_weather.json")
+from src.weather import getMeteostat as gm
+from utils import file_helper_functions as fhf
+from utils import unzip as uz
+
+weather_dict = fhf.get_dict_from_json(gen_dir + "/data/created_data/weather/meteostat_weather.json")
+segment_dict = fhf.get_dict_from_json(gen_dir + "/data/created_data/input_data/inrix/midpoints_seattle.json")
+seg_to_station = fhf.get_dict_from_json(gen_dir + "/data/created_data/input_data/inrix/Seattle/segid_to_weather.json")
 
 fault_segments = []
 
@@ -33,7 +34,7 @@ def weather_data_update(segment_id):
             return weather_dict.get(station_id)
         else:
             weather_dict[station_id] = gm.get_weather_dict(station_id, start = datetime.datetime(2022, 3, 1), end = datetime.datetime(2023, 4, 9))
-            fhf.write_dict_to_json(weather_dict, gen_dir + "/data/created_data/weather/meteostat_weather_part2.json")
+            fhf.write_dict_to_json(weather_dict, gen_dir + "/data/created_data/weather/meteostat_weather.json")
             return weather_dict[station_id]
     except:
         fault_segments.append(segment_id)
@@ -46,7 +47,7 @@ def round_to_nearest_hour(date_str):
     return dt
 
 def combine_data():
-    result = uz.read_csvs_from_zips(folder_path=gen_dir + "/data/input_data/inrix/SantaClara")
+    result = uz.read_csvs_from_zips(folder_path=gen_dir + "/data/created_data/input_data/inrix/Seattle")
     result = pd.concat(result, ignore_index=True)
     # Your existing data
     date_list = result['Date Time'].tolist()
