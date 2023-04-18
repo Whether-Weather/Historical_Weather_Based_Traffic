@@ -6,7 +6,6 @@ from meteostat import Stations, Daily
 import sys
 from pathlib import Path
 import time
-
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
     sys.path.append(gen_dir)
@@ -38,7 +37,6 @@ def weather_data_update(segment_id):
     except:
         fault_segments.append(segment_id)
 
-
 # Convert the date string to a datetime object rounded to the nearest hour
 def round_to_nearest_hour(date_str):
     dt = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%SZ')
@@ -46,41 +44,40 @@ def round_to_nearest_hour(date_str):
     return dt
 
 def combine_data():
-    result = uz.read_csvs_from_zips(folder_path=gen_dir + "/data/input_data/inrix/SantaClara")
-    result = pd.concat(result, ignore_index=True)
-    # Your existing data
-    date_list = result['Date Time'].tolist()
-    seg_id_list = result['Segment ID'].tolist()
-    speed_list = result['Speed(km/hour)'].tolist()
-    # Combine the traffic data with the weather data from weather_dict
-    combined_data = []
-    i = 0
-    for date, seg_id, speed in zip(date_list, seg_id_list, speed_list):
-        i += 1
-        date_time = round_to_nearest_hour(date)
-        date_time_str = date_time.strftime('%Y-%m-%d %H:%M:%S')
-        
-        # Get the weather data for the current segment_id
-        
-        segment_weather_dict = weather_data_update(str(seg_id))
-        
-    
-        if segment_weather_dict:
-            station_data = segment_weather_dict['times']
-            if date_time_str in station_data:
-                weather_data = station_data[date_time_str]
-                combined_data.append({
-                    'Date Time': date,
-                    'Segment ID': seg_id,
-                    'Speed(km/hour)': speed,
-                    **weather_data
-                })        
+    output_file_path = gen_dir + '/data/created_data/SantaClara/combined_data.csv'
+    header_written = False
 
-    # Write the combined data to a CSV file
-    combined_df = pd.DataFrame(combined_data)
-    combined_df.to_csv(gen_dir + '/data/created_data/combined_data.csv', index=False)
-    pd.DataFrame(fault_segments).to_csv(gen_dir + '/data/created_data/fault_segments.csv', index=False)
+    #maybe change to read one dataframe at a time
+    dfs = uz.read_csvs_from_zips()
 
+    for df in dfs:
+        date_list = df['Date Time'].tolist()
+        seg_id_list = df['Segment ID'].tolist()
+        speed_list = df['Speed(km/hour)'].tolist()
+        
+        combined_data = []
+
+        for date, seg_id, speed in zip(date_list, seg_id_list, speed_list):
+            date_time = round_to_nearest_hour(date)
+            date_time_str = date_time.strftime('%Y-%m-%d %H:%M:%S')
+
+            segment_weather_dict = weather_data_update(str(seg_id))
+
+            if segment_weather_dict:
+                station_data = segment_weather_dict['times']
+                if date_time_str in station_data:
+                    weather_data = station_data[date_time_str]
+                    combined_data.append({
+                        'Date Time': date,
+                        'Segment ID': seg_id,
+                        'Speed(km/hour)': speed,
+                        **weather_data
+                    })
+
+        # Write the combined data to the CSV file
+        combined_df = pd.DataFrame(combined_data)
+        combined_df.to_csv(output_file_path, mode='a', header=not header_written, index=False)
+        header_written = True
 
 
 if __name__ == "__main__":

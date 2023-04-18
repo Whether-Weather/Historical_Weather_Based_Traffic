@@ -14,8 +14,8 @@ def get_weather_data(station_id, start = datetime.datetime(2022, 3, 1), end = da
 def get_weather_dict(station_id, start = datetime.datetime(2022, 3, 1), end = datetime.datetime(2022, 4, 9)):
     data = get_weather_data(station_id, start, end)
     weather_data = {"times": {}}
-    selected_columns = ['prcp', 'snow', 'temp']
-    data['snow'] = data['snow'].fillna(0)
+    selected_columns = ['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco']
+    # data['snow'] = data['snow'].fillna(0)
 
     for index, row in data.iterrows():
         time = row.name.to_pydatetime()
