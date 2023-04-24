@@ -1,25 +1,24 @@
-import pandas as pd
 import json
-
-
 import math
-
 import sys
 from pathlib import Path
+
+import pandas as pd
 
 gen_dir = str(Path(__file__).resolve().parents[3])
 if gen_dir not in sys.path:
     sys.path.append(gen_dir)
 
 
+from utils import file_helper_functions as fhf
 from utils import unzip as uz
-from utils import file_helper_functions as fhf 
 
-
+SantaClaraPath = "/data/input_data/inrix/SantaClara"
+SeattlePath = "/data/created_data/input_data/inrix/Seattle"
 
 def segid_date_jsonfile():
     #get inrix speed data (straight from data downloader)
-    result = uz.read_and_combine_csvs_from_zips(folder_path=gen_dir + "/data/input_data/inrix/SantaClara") #currently everything is defaulted
+    result = uz.read_and_combine_csvs_from_zips(folder_path=gen_dir + SeattlePath) #currently everything is defaulted
 
     big_date = result['Date Time'].tolist()
     
