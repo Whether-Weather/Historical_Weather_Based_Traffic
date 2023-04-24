@@ -20,7 +20,6 @@ if gen_dir not in sys.path:
 from utils import unzip as uz
 from utils import file_helper_functions as fhf
 
-q = queue.Queue()
 
 # xmin, xmax = min(origin[1], destination[1]) - margin, max(origin[1], destination[1]) + margin
 # ymin, ymax = min(origin[0], destination[0]) - margin, max(origin[0], destination[0]) + margin
@@ -31,10 +30,14 @@ ymin = 36.894565
 ymax = 37.884195
 
 try:
-    G = ox.io.load_graphml(filepath=gen_dir + '/data/created_data/polygon/santaclara.osm')
+    G = ox.io.load_graphml(filepath=gen_dir + '/data/created_data/polygon/harriscounty.osm')
 except:
-    G = ox.graph_from_bbox(ymax, ymin, xmax, xmin, network_type='drive', simplify=False)
-    ox.io.save_graphml(G, filepath=gen_dir + '/data/created_data/polygon/santaclara.osm')
+    harris_county = ox.geocode_to_gdf("Harris County, Texas")
+
+# Get the street network for Harris County, Texas
+    G = ox.graph_from_polygon(harris_county.unary_union, network_type='drive', simplify=False)
+    # G = ox.graph_from_bbox(ymax, ymin, xmax, xmin, network_type='drive', simplify=False)
+    ox.io.save_graphml(G, filepath=gen_dir + '/data/created_data/polygon/harriscounty.osm')
 
 seg_id_off = []
 
@@ -121,8 +124,8 @@ def get_polygon_dictionary(filename = gen_dir + '/data/created_data/polygon/line
 
 
 #finish filename and clean up this function to work
-def segment_line(filename = gen_dir + '/data/created_data/polygon/line_polygon_dict.pkl'):
-    files = uz.get_zip_files()[:1]
+def segment_line(filename = gen_dir + '/data/created_data/polygon/HarrisCountyLines.pkl'):
+    files = uz.get_zip_files(folder_path= gen_dir + '/data/input_data/inrix/HarrisCounty')
     df = uz.read_csvs_from_zips(name = 'metadata.csv', files=files, 
                                 columns_to_keep=['Segment ID', 'Start Latitude', 'Start Longitude', 'End Latitude', 'End Longitude', 'Segment Length(Kilometers)'])[0]
     segments = df['Segment ID'].tolist()
@@ -137,9 +140,9 @@ def segment_line(filename = gen_dir + '/data/created_data/polygon/line_polygon_d
     for i in range(0, len(segments)):
         # time1 = time.perf_counter()
         if i % 3000 == 0:
-            print("hi")
-            # with open(filename, "wb") as f:
-            #     pickle.dump(segment_dict, f)
+            print(i)
+            with open(filename, "wb") as f:
+                pickle.dump(segment_dict, f)
         if str(segments[i]) not in segment_dict:
             line = get_route([start_lat[i], start_long[i]],
                     [end_lat[i], end_long[i]],

@@ -65,20 +65,7 @@ for segment_id, segment_data in grouped_data:
     segment_data['Date Time'] = pd.to_datetime(segment_data['Date Time'])
     segment_data.loc[:, 'Hour'] = segment_data['Date Time'].dt.hour
    
-    # plt.scatter(segment_data['Hour'], segment_data['Speed(km/hour)'])
-    # plt.xlabel('Hour')
-    # plt.ylabel('Speed (km/hour)')
-    # plt.title('Scatter plot of Speed(km/hour) vs Hour')
-    # plt.xticks(range(0, 24))  # Rotate x-axis labels for better readability
-    # plt.show()
-
-    # plt.scatter(segment_data['prcp'], segment_data['Speed(km/hour)'])
-    # plt.xlabel('prcp')
-    # plt.ylabel('Speed (km/hour)')
-    # plt.title('Scatter plot of Speed(km/hour) vs Hour')
-    #  # Rotate x-axis labels for better readability
-    # plt.show()
-    # Prepare the input and output data for the model
+    
     X = segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco', 'Hour']]#segment_data[['temp','prcp', 'snow', 'wspd', 'Hour']]
     #segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco']]
     y = segment_data['Speed(km/hour)']
@@ -137,3 +124,20 @@ for segment_id, segment_data in grouped_data:
 models_filename = models_directory + "models_all_1_dict.pkl"
 with open(models_filename, "wb") as f:
     pickle.dump(models_dict, f)
+
+
+
+# plt.scatter(segment_data['Hour'], segment_data['Speed(km/hour)'])
+    # plt.xlabel('Hour')
+    # plt.ylabel('Speed (km/hour)')
+    # plt.title('Scatter plot of Speed(km/hour) vs Hour')
+    # plt.xticks(range(0, 24))  # Rotate x-axis labels for better readability
+    # plt.show()
+
+    # plt.scatter(segment_data['prcp'], segment_data['Speed(km/hour)'])
+    # plt.xlabel('prcp')
+    # plt.ylabel('Speed (km/hour)')
+    # plt.title('Scatter plot of Speed(km/hour) vs Hour')
+    #  # Rotate x-axis labels for better readability
+    # plt.show()
+    # Prepare the input and output data for the model

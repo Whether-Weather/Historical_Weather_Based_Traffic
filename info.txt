@@ -1,0 +1,5 @@
+1. get inrix data and store it in county folder
+2. create midpoints.py of county
+3. get seg_to_station.py of input coordinates of center of county
+4. run get_csv.py -SC 
+5. run train_model.py
