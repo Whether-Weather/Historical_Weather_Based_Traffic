@@ -4,6 +4,12 @@
 # Ignore node_modules folder
 node_modules
 
+*.osm
+
+*.geojson
+
+*.pkl
+
 # Ignore all text files
 *.txt
 
@@ -20,3 +26,4 @@ venv/
 *.zip
 
 __pycache__
+*.pkl

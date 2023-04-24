@@ -48,9 +48,16 @@ def combine_data():
     header_written = False
 
     #maybe change to read one dataframe at a time
-    dfs = uz.read_csvs_from_zips()
+    zip_files = uz.get_zip_files()
+    zip_files = [zip_files[2]]
 
-    for df in dfs:
+    name = f"{zip_files[0].split('/')[-1].split('.')[0]}_combined.csv"
+    #'/Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/input_data/inrix/SantaClara/santa_clara_2022-12-01_to_2023-03-01_60_min_part_1.zip'
+    #zip_files = zip_files[2:]
+    output_folder_path = gen_dir + '/data/created_data/SantaClara/all'  # Replace with your output folder path
+
+    for file in zip_files:
+        df = uz.read_csvs_from_zips(files=[file])[0]
         date_list = df['Date Time'].tolist()
         seg_id_list = df['Segment ID'].tolist()
         speed_list = df['Speed(km/hour)'].tolist()
@@ -74,10 +81,15 @@ def combine_data():
                         **weather_data
                     })
 
-        # Write the combined data to the CSV file
+        # Write the combined data to a separate CSV file in the output folder
         combined_df = pd.DataFrame(combined_data)
-        combined_df.to_csv(output_file_path, mode='a', header=not header_written, index=False)
-        header_written = True
+        
+        # Create a unique file name using the input file's name
+        output_file_name = f"{file.split('/')[-1].split('.')[0]}_combined.csv"
+        output_file_path = f"{output_folder_path}/{output_file_name}"
+        
+        combined_df.to_csv(output_file_path, index=False)
+        combined_df = None
 
 
 if __name__ == "__main__":
