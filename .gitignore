@@ -11,7 +11,7 @@ node_modules
 *.pkl
 
 # Ignore all text files
-*.txt
+
 
 # Ignore files related to API keys
 .env
