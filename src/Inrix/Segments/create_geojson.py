@@ -16,18 +16,26 @@ filename = gen_dir + '/data/created_data/polygon/line_polygon_dict.pkl'
 with open(filename, "rb") as f:
     segment_dict = pickle.load(f)
 
+def swap_coordinates(linegeometry):
+    return LineString([(coord[1], coord[0]) for coord in list(linegeometry.coords)])
+
 
 def create_geojson(segment_dict):
     features = []
-    
+    i = 0
     for segment_id, linegeometry in segment_dict.items():
-        feature = geojson.Feature(
-            geometry=linegeometry,
-            properties={
-                'segment_id': segment_id
-            }
-        )
+        if linegeometry:
+            feature = geojson.Feature(
+                geometry=  swap_coordinates(linegeometry),
+                properties={
+                    'segment_id': segment_id
+                }
+            )
+        else:
+            
+            i += 1
         features.append(feature)
+        
     
     return geojson.FeatureCollection(features)
 
