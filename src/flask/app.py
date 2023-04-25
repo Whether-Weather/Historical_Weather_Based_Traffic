@@ -5,7 +5,7 @@ from pathlib import Path
 import get_colors as gc
 from flask_cors import CORS
 
-from flask import Flask, request
+from flask import Flask, jsonify, request
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
@@ -42,7 +42,8 @@ with open(filename, "rb") as f:
 def get_model():
     data = request.get_json()
 
-    return gc.get_colors(geojson, loaded_models_dict, data['rain'], data['temperature'], data['humidity'])
+    response = gc.get_colors(geojson, loaded_models_dict, data['rain'], data['temperature'], data['humidity'])
+    return jsonify(response)
     
     
     

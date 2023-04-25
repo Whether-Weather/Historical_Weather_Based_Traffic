@@ -24,7 +24,7 @@ def get_colors(geojson, model, prcp, temp, rhum):
         feature['properties']['color'] = get_color(y_pred, 50)
 
         
-    return geojson
+    return {'geojson': geojson}
         
 # For feature in features, get sgement_id from properties
 #   Get predicted speed based off of, passed in data values from flask
