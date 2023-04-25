@@ -1,9 +1,9 @@
-import geojson
-from shapely.geometry import LineString
+import pickle
 import sys
 from pathlib import Path
-import pickle
 
+import geojson
+from shapely.geometry import LineString
 
 gen_dir = str(Path(__file__).resolve().parents[3])
 if gen_dir not in sys.path:
@@ -12,7 +12,7 @@ if gen_dir not in sys.path:
 
 # Sample dictionary with segment_id and linegeometry
 segment_dict = {}
-filename = gen_dir + '/data/created_data/polygon/line_polygon_dict.pkl'
+filename = gen_dir + '/data/created_data/input_data/inrix/SantaClaraLines.pkl'
 with open(filename, "rb") as f:
     segment_dict = pickle.load(f)
 
@@ -42,5 +42,5 @@ def create_geojson(segment_dict):
 geojson_data = create_geojson(segment_dict)
 
 # Save GeoJSON data to a file
-with open(gen_dir + '/data/created_data/polygon/output_file.geojson', "w") as f:
+with open(gen_dir + '/data/created_data/input_data/output_file.geojson', "w") as f:
     geojson.dump(geojson_data, f)
