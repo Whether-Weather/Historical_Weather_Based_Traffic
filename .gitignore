@@ -27,3 +27,6 @@ venv/
 
 __pycache__
 *.pkl
+data/input_data/inrix/SantaClara/santa_clara_2022-04-01_to_2022-06-01_60_min_part_1/EULA.txt
+data/input_data/inrix/SantaClara/santa_clara_2022-04-01_to_2022-06-01_60_min_part_1/README.txt
+data/created_data/models/models_dict.pkl
