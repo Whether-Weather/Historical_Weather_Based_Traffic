@@ -34,22 +34,24 @@ def find_station():
     ]
     
     for seg_id in segment_dict:
-        closest_station_id = find_closest_station(segment_dict[seg_id], station_coordinates_list)
+        closest_station_id = find_closest_stations(segment_dict[seg_id], station_coordinates_list)
         segment_To_Weather[seg_id] = closest_station_id
         
 # Function to find the closest station from input coordinates
-def find_closest_station(input_coords, station_coords_list):
-    closest_station = None
-    closest_distance = float('inf')
+def find_closest_stations(input_coords, station_coords_list):
+    distances = []
 
     for station_id, station_coords in station_coords_list:
         distance = great_circle(input_coords, station_coords).km
+        distances.append((station_id, distance))
 
-        if distance < closest_distance:
-            closest_distance = distance
-            closest_station = station_id
+    # Sort the list by the distance (element at index 1 in each tuple)
+    sorted_distances = sorted(distances, key=lambda x: x[1])
 
-    return closest_station
+    # Extract station_ids from the sorted list
+    sorted_station_ids = [station_id for station_id, _ in sorted_distances]
+
+    return sorted_station_ids
 
 
 if __name__ == '__main__':

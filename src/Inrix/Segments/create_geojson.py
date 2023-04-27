@@ -10,9 +10,12 @@ if gen_dir not in sys.path:
     sys.path.append(gen_dir)
 
 
+
+county = 'harriscounty'
+filename = gen_dir + '/data/created_data/polygon/HarrisCountyLines.pkl'
+
 # Sample dictionary with segment_id and linegeometry
 segment_dict = {}
-filename = gen_dir + '/data/created_data/input_data/inrix/SantaClaraLines.pkl'
 with open(filename, "rb") as f:
     segment_dict = pickle.load(f)
 
@@ -42,5 +45,5 @@ def create_geojson(segment_dict):
 geojson_data = create_geojson(segment_dict)
 
 # Save GeoJSON data to a file
-with open(gen_dir + '/data/created_data/input_data/output_file.geojson', "w") as f:
+with open(gen_dir + '/data/created_data/' + county + '/output_file.geojson', "w") as f:
     geojson.dump(geojson_data, f)

@@ -25,29 +25,26 @@ gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
     sys.path.append(gen_dir)
 
-
-models_directory = gen_dir + "/data/created_data/models/"
-models_filename = models_directory + "models_all_1_dict.pkl"
+county = 'SantaClara'
+models_directory = gen_dir + "/data/created_data/" + county  + "/"
+models_filename = models_directory + "santaclara.pkl"
 
 with open(models_filename, "rb") as f:
     loaded_models_dict = pickle.load(f)
 
 
 
-filename = gen_dir + '/data/created_data/input_data/output_file.json'
+filename = gen_dir + '/data/created_data/' + county + '/' + county + '.json'
 with open(filename, "rb") as f:
     geojson = json.load(f)
 
 @app.route('/get-model', methods=['POST'])
 def get_model():
+    print(request.get_json())
     data = request.get_json()
 
     response = gc.get_colors(geojson, loaded_models_dict, data['rain'], data['temperature'], data['humidity'])
     return jsonify(response)
-    
-    
-    
-    
     
     
 

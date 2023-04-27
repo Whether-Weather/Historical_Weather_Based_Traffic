@@ -64,8 +64,11 @@ def weather_data_update(segment_id):
 
 # Convert the date string to a datetime object rounded to the nearest hour
 def round_to_nearest_hour(date_str):
+    time1 = time.perf_counter()
     dt = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%SZ')
     dt = dt.replace(minute=0, second=0)
+    time2 = time.perf_counter()
+    print(f"round hour: {time2 - time1}")
     return dt
 
 def combine_data():
@@ -90,7 +93,7 @@ def combine_data():
         ref_speed_list = df['Ref Speed(km/hour)'].tolist()
         
         combined_data = []
-
+        i = 0
         for date, seg_id, speed, hist_speed, ref_speed in zip(date_list, seg_id_list, speed_list, hist_speed_list, ref_speed_list):
             date_time = round_to_nearest_hour(date)
             date_time_str = date_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -99,6 +102,7 @@ def combine_data():
             if segment_weather_dict:
                 station_data = segment_weather_dict['times']
                 if date_time_str in station_data:
+                    time1 = time.perf_counter()
                     weather_data = station_data[date_time_str]
                     combined_data.append({
                         'Date Time': date,
@@ -108,6 +112,9 @@ def combine_data():
                         'Ref Speed(km/hour)': ref_speed,
                         **weather_data
                     })
+                    time2 = time.perf_counter()
+                    print(f"combinerow: {time2 - time1}")
+            i += 1
 
         # Write the combined data to a separate CSV file in the output folder
         combined_df = pd.DataFrame(combined_data)
