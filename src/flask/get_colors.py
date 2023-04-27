@@ -7,23 +7,22 @@ from sklearn.preprocessing import StandardScaler
 
 def get_colors(geojson, model, prcp, temp, rhum):
 # Get the geojson from flask 
+    s = 0
 
     for feature in geojson['features']:
         seg_id = feature['properties']['segment_id']
-        X_test = [[temp, 0, rhum, prcp, 0, 0, 0, 0, datetime.datetime.now().hour]]
-        
-        # Scale the feature vector using the same scaler used during training
-        scaler = StandardScaler()
-        X_test = scaler.fit_transform(X_test)
+        X_test = [[float(temp), 0, float(rhum), float(prcp), 0, 0, 0, 0, datetime.datetime.now().hour]]
         
         # Predict the speed using the linear regression model and the feature vector
         y_pred = model[int(seg_id)]['model'].predict(X_test)[0]
         # print('predicted speed',y_pred)
         
-        feature['properties']['speed'] = y_pred
-        feature['properties']['color'] = get_color(y_pred, 50)
+        feature['properties']['speed'] = round(y_pred,2)
+        feature['properties']['color'] = get_color(y_pred, 30)
 
+        s+=y_pred
         
+    print(float(temp), float(rhum), float(prcp), s/len(geojson['features']))
     return {'geojson': geojson}
         
 # For feature in features, get sgement_id from properties
