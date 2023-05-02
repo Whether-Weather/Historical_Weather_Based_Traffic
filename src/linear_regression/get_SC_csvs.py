@@ -81,9 +81,9 @@ def combine_data():
 
     
     #'/Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/input_data/inrix/SantaClara/santa_clara_2022-12-01_to_2023-03-01_60_min_part_1.zip'
-    #zip_files = zip_files[2:]
+    zip_files = zip_files[1:]
     output_folder_path = gen_dir + '/data/created_data/' + county  # Replace with your output folder path
-
+    missing_segments = []
     for file in zip_files:
         df = uz.read_csvs_from_zips(files=[file])[0]
         date_list = df['Date Time'].tolist()
@@ -93,31 +93,44 @@ def combine_data():
         ref_speed_list = df['Ref Speed(km/hour)'].tolist()
         
         combined_data = []
-        i = 0
+        
+        count = 0
         for date, seg_id, speed, hist_speed, ref_speed in zip(date_list, seg_id_list, speed_list, hist_speed_list, ref_speed_list):
             date_time = round_to_nearest_hour(date)
             date_time_str = date_time.strftime('%Y-%m-%d %H:%M:%S')
+            segment_id = str(seg_id)
+            checker = False
+            try:
+                for i in range(0, len(seg_to_station[segment_id])):
 
-            segment_weather_dict = weather_data_update(str(seg_id))
-            if segment_weather_dict:
-                station_data = segment_weather_dict['times']
-                if date_time_str in station_data:
-                    time1 = time.perf_counter()
-                    weather_data = station_data[date_time_str]
-                    combined_data.append({
-                        'Date Time': date,
-                        'Segment ID': seg_id,
-                        'Speed(km/hour)': speed,
-                        'Hist Av Speed(km/hour)': hist_speed,
-                        'Ref Speed(km/hour)': ref_speed,
-                        **weather_data
-                    })
-                    time2 = time.perf_counter()
-                    print(f"combinerow: {time2 - time1}")
-            i += 1
+                    segment_weather_dict = weather_data_update(segment_id, i)
+                    if segment_weather_dict:
+                        station_data = segment_weather_dict['times']
+                        if date_time_str in station_data:
+                            
+                            weather_data = station_data[date_time_str]
+                            combined_data.append({
+                                'Date Time': date,
+                                'Segment ID': seg_id,
+                                'Speed(km/hour)': speed,
+                                'Hist Av Speed(km/hour)': hist_speed,
+                                'Ref Speed(km/hour)': ref_speed,
+                                **weather_data
+                            })
+                            checker = True
+                            break
+                if not checker:
+                    print(f"{i}: error")
+            except:
+                if segment_id not in missing_segments:
+                    missing_segments.append(segment_id)
+                
+                    
+            count += 1
 
         # Write the combined data to a separate CSV file in the output folder
         combined_df = pd.DataFrame(combined_data)
+        combined_data = []
         
         # Create a unique file name using the input file's name
         output_file_name = f"{file.split('/')[-1].split('.')[0]}_combined.pkl"
@@ -125,7 +138,7 @@ def combine_data():
         
         combined_df.to_pickle(output_file_path)
         combined_df = None
-
+    
 
 if __name__ == "__main__":
     combine_data()

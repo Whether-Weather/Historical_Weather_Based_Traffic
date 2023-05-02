@@ -47,9 +47,9 @@ with open(county_path + 'segid_to_weather.pkl', "rb") as f:
 fault_segments = []
 
 # Convert Meteostat data to a dictionary with timestamps as keys
-def weather_data_update(segment_id):
+def weather_data_update(segment_id, i):
     try:
-        station_id = seg_to_station[segment_id]
+        station_id = seg_to_station[segment_id][i]
 
         if station_id in weather_dict:
             return weather_dict.get(station_id)
@@ -70,18 +70,17 @@ def round_to_nearest_hour(date_str):
     
     return dt
 
+
+
 def combine_data():
-    #output_file_path = gen_dir + '/data/created_data/SantaClara/combined_data.csv'
     header_written = False
     input_path = gen_dir + "/data/input_data/inrix/" + county
-    #maybe change to read one dataframe at a time
-    zip_files = uz.get_zip_files(folder_path= input_path)
-    # zip_files = [zip_files[2]]
-
-    
-    #'/Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/input_data/inrix/SantaClara/santa_clara_2022-12-01_to_2023-03-01_60_min_part_1.zip'
-    #zip_files = zip_files[2:]
-    output_folder_path = gen_dir + '/data/created_data/' + county  # Replace with your output folder path
+    zip_files = uz.get_zip_files(folder_path=input_path)
+    # what files do i have already
+    zip_files = zip_files[2:]
+    output_folder_path = gen_dir + '/data/created_data/' + county
+    missing_segments = []
+    chunk_size = 10000000  # 5 million rows
 
     for file in zip_files:
         df = uz.read_csvs_from_zips(files=[file])[0]
@@ -90,40 +89,61 @@ def combine_data():
         speed_list = df['Speed(km/hour)'].tolist()
         hist_speed_list = df['Hist Av Speed(km/hour)'].tolist()
         ref_speed_list = df['Ref Speed(km/hour)'].tolist()
-        
+        df = None
+
         combined_data = []
-        i = 0
+
+        count = 0
         for date, seg_id, speed, hist_speed, ref_speed in zip(date_list, seg_id_list, speed_list, hist_speed_list, ref_speed_list):
             date_time = round_to_nearest_hour(date)
             date_time_str = date_time.strftime('%Y-%m-%d %H:%M:%S')
+            segment_id = str(seg_id)
+            
+                            
+            for i in range(0, len(seg_to_station[segment_id])):
 
-            segment_weather_dict = weather_data_update(str(seg_id))
-            if segment_weather_dict:
-                station_data = segment_weather_dict['times']
-                if date_time_str in station_data:
-                    
-                    weather_data = station_data[date_time_str]
-                    combined_data.append({
-                        'Date Time': date,
-                        'Segment ID': seg_id,
-                        'Speed(km/hour)': speed,
-                        'Hist Av Speed(km/hour)': hist_speed,
-                        'Ref Speed(km/hour)': ref_speed,
-                        **weather_data
-                    })
-                
-                    
-            i += 1
+                segment_weather_dict = weather_data_update(segment_id, i)
+                if segment_weather_dict:
+                    station_data = segment_weather_dict['times']
+                    if date_time_str in station_data:
 
-        # Write the combined data to a separate CSV file in the output folder
-        combined_df = pd.DataFrame(combined_data)
-        
-        # Create a unique file name using the input file's name
-        output_file_name = f"{file.split('/')[-1].split('.')[0]}_combined.pkl"
-        output_file_path = f"{output_folder_path}/{output_file_name}"
-        
-        combined_df.to_pickle(output_file_path)
-        combined_df = None
+                        weather_data = station_data[date_time_str]
+                        combined_data.append({
+                            'Date Time': date,
+                            'Segment ID': seg_id,
+                            'Speed(km/hour)': speed,
+                            'Hist Av Speed(km/hour)': hist_speed,
+                            'Ref Speed(km/hour)': ref_speed,
+                            **weather_data
+                        })
+                        
+                        break
+            
+            
+            
+            count += 1
+            
+
+            if count % chunk_size == 0:
+                combined_df = pd.DataFrame(combined_data)
+                output_file_name = f"{file.split('/')[-1].split('.')[0]}_combined.pkl"
+                output_file_path = f"{output_folder_path}/{output_file_name}"
+                if os.path.isfile(output_file_path):
+                    existing_df = pd.read_pickle(output_file_path)
+                    combined_df = pd.concat([existing_df, combined_df], ignore_index=True)
+                combined_df.to_pickle(output_file_path)
+                combined_data = []
+                combined_df = None
+
+        if combined_data:
+            combined_df = pd.DataFrame(combined_data)
+            output_file_name = f"{file.split('/')[-1].split('.')[0]}_combined.pkl"
+            output_file_path = f"{output_folder_path}/{output_file_name}"
+            if os.path.isfile(output_file_path):
+                existing_df = pd.read_pickle(output_file_path)
+                combined_df = pd.concat([existing_df, combined_df], ignore_index=True)
+            combined_df.to_pickle(output_file_path)
+
 
 
 if __name__ == "__main__":

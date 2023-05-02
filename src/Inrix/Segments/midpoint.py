@@ -9,17 +9,18 @@ if gen_dir not in sys.path:
 
 from utils import unzip as uz
 import pickle
-
+import pandas as pd
 # Santa_Clara_Path = '/data/input_data/inrix/SantaClara/santa_clara_2022-04-01_to_2022-06-01_60_min_part_1/metadata.csv'
 # Seattle_Path = '/data/created_data/input_data/inrix/Seattle/metadata.csv'
 
 county = "HarrisCounty"
-
+columns_to_keep = ['Segment ID', 'Start Latitude', 'Start Longitude', 'End Latitude', 'End Longitude', 'Segment Length(Kilometers)']
 files = uz.get_zip_files(folder_path= gen_dir + '/data/input_data/inrix/' + county)
-df = uz.read_csvs_from_zips(name = 'metadata.csv', files=files, 
-                                columns_to_keep=['Segment ID', 'Start Latitude', 'Start Longitude', 'End Latitude', 'End Longitude', 'Segment Length(Kilometers)'])[0]
+dfs = uz.read_csvs_from_zips(name = 'metadata.csv', files=files, 
+                                columns_to_keep=columns_to_keep)
 
-
+combined_df = pd.concat(dfs, ignore_index=True)
+df = combined_df.drop_duplicates()
 # Create a dictionary with the midpoint of each segment as the value
 
 start_lat_list = df['Start Latitude'].tolist()
@@ -27,6 +28,7 @@ start_long_list = df['Start Longitude'].tolist()
 end_lat_list = df['End Latitude'].tolist()
 end_long_list = df['End Longitude'].tolist()
 seg_id_list = df['Segment ID'].tolist()
+
 
 midpoints = {}
 

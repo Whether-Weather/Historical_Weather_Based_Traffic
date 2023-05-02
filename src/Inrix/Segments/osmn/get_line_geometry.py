@@ -126,8 +126,10 @@ def get_polygon_dictionary(filename = gen_dir + '/data/created_data/polygon/line
 #finish filename and clean up this function to work
 def segment_line(filename = gen_dir + '/data/created_data/polygon/HarrisCountyLines.pkl'):
     files = uz.get_zip_files(folder_path= gen_dir + '/data/input_data/inrix/HarrisCounty')
-    df = uz.read_csvs_from_zips(name = 'metadata.csv', files=files, 
-                                columns_to_keep=['Segment ID', 'Start Latitude', 'Start Longitude', 'End Latitude', 'End Longitude', 'Segment Length(Kilometers)'])[0]
+    dfs = uz.read_csvs_from_zips(name = 'metadata.csv', files=files, 
+                                columns_to_keep=['Segment ID', 'Start Latitude', 'Start Longitude', 'End Latitude', 'End Longitude', 'Segment Length(Kilometers)'])
+    combined_df = pd.concat(dfs, ignore_index=True)
+    df = combined_df.drop_duplicates()
     segments = df['Segment ID'].tolist()
     start_lat = df['Start Latitude'].tolist()
     start_long = df['Start Longitude'].tolist()
