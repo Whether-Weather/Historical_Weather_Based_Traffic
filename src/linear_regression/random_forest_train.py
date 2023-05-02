@@ -16,10 +16,17 @@ gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
     sys.path.append(gen_dir)
 
-folder_path = gen_dir + "/data/created_data/SantaClara/all/pickle"
+# Load the combined data
+#data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
-pkl_files = [f for f in os.listdir(folder_path) if f.endswith('.pkl')]
+####
+county = 'HarrisCounty'
+folder_path = gen_dir + "/data/created_data/" + county 
 
+# List all the csv files in the folder
+pkl_files = [f for f in os.listdir(folder_path) if f.endswith('combined.pkl')]
+
+# Create a list of file paths
 file_paths = [os.path.join(folder_path, file) for file in pkl_files]
 
 dfs = []
@@ -27,6 +34,7 @@ for file in file_paths:
     time1 = time.perf_counter()
 
     df = pd.read_pickle(file)
+    # print(df.head(10))
     time2 = time.perf_counter()
     print(time2 - time1)
     dfs.append(df)
@@ -35,66 +43,105 @@ data = pd.concat(dfs, ignore_index=True)
 dfs = None
 df = None
 
+
+####
+
+# Preprocess the data
+# data['Date Time'] = pd.to_datetime(data['Date Time'])
+
+# Group the data by segment ID
 grouped_data = data.groupby('Segment ID')
 
-models_directory = gen_dir + "/data/created_data/models/"
+# Directory to store the models
+models_directory = gen_dir + "/data/created_data/" + county
+name = 'random_forest_model_backfill'
+models_filename = models_directory + "/" + name + ".pkl"
+error_file = models_directory + '/' + name + '_error.pkl'
 
+# Dictionary to store the trained models
+error_segments = []
 models_dict = {}
+try:
+    with open(models_filename, "rb") as f:
+        models_dict = pickle.load(f)
+except FileNotFoundError:
+    with open(models_filename, "wb") as f:
+        pickle.dump(models_dict, f)
 
-transformations = ['linear', 'sqrt', 'square', 'cube', 'cbrt', 'quad_root']
+try:
+    with open(error_file, "rb") as f:
+        error_segments = pickle.load(f)
+except FileNotFoundError:
+    with open(error_file, "wb") as f:
+        pickle.dump(error_segments, f)
+# Train a model for each segment ID
 
+i = 0 
+chunk = 100
 for segment_id, segment_data in grouped_data:
-    segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
-    segment_data['Date Time'] = pd.to_datetime(segment_data['Date Time'])
-    segment_data.loc[:, 'Hour'] = segment_data['Date Time'].dt.hour
+    try:
+        if segment_id not in models_dict:
+            segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
+            # segment_data['Date Time'] = pd.to_datetime(segment_data['Date Time'])
+            # segment_data.loc[:, 'Hour'] = segment_data['Date Time'].dt.hour
+            segment_data['Hour'] = pd.to_datetime(segment_data['Date Time']).dt.hour
 
-    X = segment_data[['temp', 'rhum', 'prcp', 'snow', 'wspd', 'pres', 'coco', 'Hour']]
-    y = segment_data['Speed(km/hour)']
 
-    best_model = None
-    best_score = float('-inf')
-    best_transformation = None
-    imputer = SimpleImputer(strategy='mean')
-    X_imputed = imputer.fit_transform(X)
-    
-    for transformation in transformations:
-        if transformation == 'linear':
-            X_transformed = X_imputed
-        elif transformation == 'sqrt':
-            X_transformed = np.sqrt(np.abs(X_imputed))
-        elif transformation == 'square':
-            X_transformed = np.power(X_imputed, 2)
-        elif transformation == 'cube':
-            X_transformed = np.power(X_imputed, 3)
-        elif transformation == 'cbrt':
-            X_transformed = np.cbrt(np.abs(X_imputed))
-        elif transformation == 'quad_root':
-            X_transformed = np.power(np.abs(X_imputed), 1/4)
+            # print(segment_data.head())
+            # print(segment_data.columns)
 
-        X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=0.2, random_state=42, stratify=None)
+            X = segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'wdir', 'wspd', 'pres', 'Hour']]
+            y = segment_data['Speed(km/hour)']
 
-        model = RandomForestRegressor(n_estimators=100, random_state=42)
-        model.fit(X_train, y_train)
+            # print(X.head())
+            # print(X.columns)
+            # print(y.head())
 
-        score = model.score(X_test, y_test)
+            # imputer = SimpleImputer(strategy='mean')
+            # X_imputed = imputer.fit_transform(X)
+            X_filled = X.fillna(method='ffill')
+            X_imputed = X.fillna(method='ffill').fillna(method='bfill')
 
-        if score > best_score:
-            best_score = score
-            best_model = model
-            best_transformation = transformation
 
-    models_dict[segment_id] = {
-        'model': model,
-        'r2_score': score,
-        'mae': mean_absolute_error(y_test, model.predict(X_test)),
-        'mse': mean_squared_error(y_test, model.predict(X_test)),
-        'rmse': np.sqrt(mean_squared_error(y_test, model.predict(X_test))),
-        'training_size': len(X_train),
-        'testing_size': len(X_test),
-        'feature_names': list(X.columns),
-        'training_timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
+            X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42, stratify=None)
 
-models_filename = models_directory + "models_all_sqrt_rf_dict.pkl"
+            # Create and train a random forest regressor on the data
+            model = RandomForestRegressor(random_state=42)
+            model.fit(X_train, y_train)
+
+            # Evaluate the model on test data
+            score = model.score(X_test, y_test)
+
+            models_dict[segment_id] = {
+                'model': model,
+                'r2_score': score,
+                'mae': mean_absolute_error(y_test, model.predict(X_test)),
+                'mse': mean_squared_error(y_test, model.predict(X_test)),
+                'rmse': np.sqrt(mean_squared_error(y_test, model.predict(X_test))),
+                'training_size': len(X_train),
+                'testing_size': len(X_test),
+                'feature_names': list(X.columns),
+                'training_timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+        i += 1
+        if i % chunk == 0:
+            with open(models_filename, "wb") as f:
+                pickle.dump(models_dict, f)
+            with open(error_file, "wb") as f:
+                pickle.dump(error_segments, f)
+    except:
+        error_segments.append(segment_id)
+
+# Save the models dictionary to a file
+
 with open(models_filename, "wb") as f:
     pickle.dump(models_dict, f)
+
+
+with open(error_file, "wb") as f:
+    pickle.dump(error_segments, f)
+
+
+#with imputer
+#r2 average 0.33010720727733905
+#mae average 2.88497609616322

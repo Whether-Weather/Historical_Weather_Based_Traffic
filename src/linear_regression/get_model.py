@@ -10,9 +10,9 @@ gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
     sys.path.append(gen_dir)
 
-
-models_directory = gen_dir + "/data/created_data/models/"
-models_filename = models_directory + "models_all_1_dict.pkl"
+county = 'HarrisCounty'
+models_directory = gen_dir + "/data/created_data/" + county
+models_filename = models_directory + "/random_forest_model_backfill.pkl"
 
 with open(models_filename, "rb") as f:
     loaded_models_dict = pickle.load(f)

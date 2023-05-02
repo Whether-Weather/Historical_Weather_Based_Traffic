@@ -22,10 +22,11 @@ if gen_dir not in sys.path:
 #data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
 ####
-folder_path = gen_dir + "/data/created_data/SantaClara/all/pickle"
+county = 'HarrisCounty'
+folder_path = gen_dir + "/data/created_data/" + county 
 
-# List all the CSV files in the folder
-pkl_files = [f for f in os.listdir(folder_path) if f.endswith('.pkl')]
+# List all the csv files in the folder
+pkl_files = [f for f in os.listdir(folder_path) if f.endswith('combined.pkl')]
 
 # Create a list of file paths
 file_paths = [os.path.join(folder_path, file) for file in pkl_files]
@@ -35,6 +36,7 @@ for file in file_paths:
     time1 = time.perf_counter()
 
     df = pd.read_pickle(file)
+    # print(df.head(10))
     time2 = time.perf_counter()
     print(time2 - time1)
     dfs.append(df)
@@ -53,77 +55,87 @@ df = None
 grouped_data = data.groupby('Segment ID')
 
 # Directory to store the models
-models_directory = gen_dir + "/data/created_data/models/"
+models_directory = gen_dir + "/data/created_data/" + county
 
 # Dictionary to store the trained models
 models_dict = {}
 transformations = ['linear', 'sqrt', 'square', 'cube'] #, 'cbrt', 'quad_root']
-
+error_segments = []
 # Train a model for each segment ID
 for segment_id, segment_data in grouped_data:
-    segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
-    segment_data['Date Time'] = pd.to_datetime(segment_data['Date Time'])
-    segment_data.loc[:, 'Hour'] = segment_data['Date Time'].dt.hour
-   
+    try:
+        segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
+        segment_data['Date Time'] = pd.to_datetime(segment_data['Date Time'])
+        segment_data.loc[:, 'Hour'] = segment_data['Date Time'].dt.hour
     
-    X = segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco', 'Hour']]#segment_data[['temp','prcp', 'snow', 'wspd', 'Hour']]
-    #segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco']]
-    y = segment_data['Speed(km/hour)']
+        
+        X = segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco', 'Hour']]#segment_data[['temp','prcp', 'snow', 'wspd', 'Hour']]
+        #segment_data[['temp', 'dwpt', 'rhum', 'prcp', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco']]
+       
+        y = segment_data['Speed(km/hour)']
 
-    # Impute missing values using the mean of each feature
-    best_model = None
-    best_score = float('-inf')
-    best_transformation = None
-    imputer = SimpleImputer(strategy='mean')
-    X_imputed = imputer.fit_transform(X)
 
-    # Apply square root transformation to the imputed data
-   
-    for transformation in transformations:
-        if transformation == 'linear':
-            X_transformed = X_imputed
-        elif transformation == 'sqrt':
-            X_transformed = np.sqrt(np.abs(X_imputed))
-        elif transformation == 'square':
-            X_transformed = np.power(X_imputed, 2)
-        elif transformation == 'cube':
-            X_transformed = np.power(X_imputed, 3)
-        elif transformation == 'cbrt':
-            X_transformed = np.cbrt(np.abs(X_imputed))
-        elif transformation == 'quad_root':
-            X_transformed = np.power(np.abs(X_imputed), 1/4)
+        # Impute missing values using the mean of each feature
+        best_model = None
+        best_score = float('-inf')
+        best_transformation = None
+        imputer = SimpleImputer(strategy='mean')
+        X_imputed = imputer.fit_transform(X)
 
-        # Split the data into training and test sets
-        X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=0.2, random_state=42, stratify=None)
+        # Apply square root transformation to the imputed data
+    
+        for transformation in transformations:
+            if transformation == 'linear':
+                X_transformed = X_imputed
+            elif transformation == 'sqrt':
+                X_transformed = np.sqrt(np.abs(X_imputed))
+            elif transformation == 'square':
+                X_transformed = np.power(X_imputed, 2)
+            elif transformation == 'cube':
+                X_transformed = np.power(X_imputed, 3)
+            elif transformation == 'cbrt':
+                X_transformed = np.cbrt(np.abs(X_imputed))
+            elif transformation == 'quad_root':
+                X_transformed = np.power(np.abs(X_imputed), 1/4)
 
-        # Create and train a linear regression model on the transformed data
-        model = LinearRegression()
-        model.fit(X_train, y_train)
+            # Split the data into training and test sets
+            X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=0.2, random_state=42, stratify=None)
 
-        # Evaluate the model on test data
-        score = model.score(X_test, y_test)
-        if score > best_score:
-            best_score = score
-            best_model = model
-            best_transformation = transformation
+            # Create and train a linear regression model on the transformed data
+            model = LinearRegression()
+            model.fit(X_train, y_train)
 
-    # Save the model to the dictionary
-    models_dict[segment_id] = {
-        'model': model,
-        'r2_score': score,
-        'mae': mean_absolute_error(y_test, model.predict(X_test)),
-        'mse': mean_squared_error(y_test, model.predict(X_test)),
-        'rmse': np.sqrt(mean_squared_error(y_test, model.predict(X_test))),
-        'training_size': len(X_train),
-        'testing_size': len(X_test),
-        'feature_names': list(X.columns),
-        'training_timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
+            # Evaluate the model on test data
+            score = model.score(X_test, y_test)
+            if score > best_score:
+                best_score = score
+                best_model = model
+                best_transformation = transformation
 
+        # Save the model to the dictionary
+        models_dict[segment_id] = {
+            'model': best_model,
+            'r2_score': best_score,
+            'mae': mean_absolute_error(y_test, model.predict(X_test)),
+            'mse': mean_squared_error(y_test, model.predict(X_test)),
+            'rmse': np.sqrt(mean_squared_error(y_test, model.predict(X_test))),
+            'transformation': best_transformation,
+            'training_size': len(X_train),
+            'testing_size': len(X_test),
+            'feature_names': list(X.columns),
+            'training_timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+    except:
+        error_segments.append(segment_id)
 # Save the models dictionary to a file
-models_filename = models_directory + "models_all_1_dict.pkl"
+name = 'speed_hist_model'
+models_filename = models_directory + "/" + name + ".pkl"
 with open(models_filename, "wb") as f:
     pickle.dump(models_dict, f)
+
+error_file = models_directory + '/' + name + '_error.pkl'
+with open(error_file, "wb") as f:
+    pickle.dump(error_segments, f)
 
 
 
@@ -141,3 +153,16 @@ with open(models_filename, "wb") as f:
     #  # Rotate x-axis labels for better readability
     # plt.show()
     # Prepare the input and output data for the model
+
+
+
+     # segment_data.loc[:, 'Speed Difference'] = segment_data['Speed(km/hour)'] - segment_data['Hist Av Speed(km/hour)']
+
+        # # Impute missing values in the 'Speed Difference' column using the mean
+        # imputer = SimpleImputer(strategy='mean')
+        # y_imputed = imputer.fit_transform(segment_data[['Speed Difference']])
+        # # segment_data['Speed Difference'] = y_imputed.reshape(-1)
+        # segment_data['Speed Difference'] = y_imputed
+
+        # # Update the target variable to be the new 'Speed Difference' column
+        # y = segment_data['Speed Difference']
