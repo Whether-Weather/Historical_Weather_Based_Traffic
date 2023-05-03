@@ -34,23 +34,24 @@ def get_colors(geojson, model, prcp, temp, rhum):
 
 
 def get_color(current_speed, historical_speed):
-    """Return an RGB array between dark red (-50% slower) and bright green (+50% faster)
+    """Return an RGB array between dark red (-20% slower) and bright green (+20% faster)
     depending on the comparison between the current speed and historical speed."""
-    
+
     # Calculate the percentage difference between the current speed and historical speed
     percentage_diff = (current_speed - historical_speed) / historical_speed * 100
     
     # Determine the color based on the percentage difference
-    if percentage_diff <= -50:
-        # Dark red for -50% or slower
+    if percentage_diff <= -20:
+        # Dark red for -20% or slower
         return [139, 0, 0]
-    elif percentage_diff >= 50:
-        # Bright green for +50% or faster
+    elif percentage_diff >= 20:
+        # Bright green for +20% or faster
         return [0, 255, 0]
     else:
         # Calculate the color between red and green based on the percentage difference
-        red = max(0, min(255, int(255 * (100 + percentage_diff) / 100)))
-        green = max(0, min(255, int(255 * (100 - percentage_diff) / 100)))
+        red = max(0, min(255, int(255 * (120 + percentage_diff) / 140)))
+        green = max(0, min(255, int(255 * (120 - percentage_diff) / 140)))
         blue = 0
         return [red, green, blue]
+
 
