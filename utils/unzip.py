@@ -13,6 +13,16 @@ def get_zip_files(folder_path = '/Users/joshkelleran/SeniorDesign/Whether-Weathe
                     
     return walked
 
+def get_combined_files(folder_path):
+    walked = []
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith('combined.pkl'):
+                zip_file_path = os.path.join(root, file)
+                walked.append(zip_file_path)
+                    
+    return walked
+
 
 def read_csvs_from_zips(folder_path = '/Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/input_data/inrix/SantaClara',
                                     name='data.csv', 

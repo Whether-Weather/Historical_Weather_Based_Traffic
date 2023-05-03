@@ -70,19 +70,27 @@ def round_to_nearest_hour(date_str):
     
     return dt
 
-
+def get_file_name_without_extension(file_path):
+    return os.path.splitext(os.path.basename(file_path))[0]
+# .replace('_combined', '')
 
 def combine_data():
     header_written = False
     input_path = gen_dir + "/data/input_data/inrix/" + county
     zip_files = uz.get_zip_files(folder_path=input_path)
     # what files do i have already
-    zip_files = zip_files[2:]
-    output_folder_path = gen_dir + '/data/created_data/' + county
-    missing_segments = []
-    chunk_size = 10000000  # 5 million rows
+    output_folder_path = gen_dir + '/data/created_data/' + county + "/combined_data"
+    existing_files = uz.get_combined_files(output_folder_path)
 
-    for file in zip_files:
+
+    existing_files_names = [get_file_name_without_extension(file_path).replace('_combined', '') for file_path in existing_files]
+   
+    filtered_zip_files = [file_path for file_path in zip_files if get_file_name_without_extension(file_path) not in existing_files_names]
+    
+    chunk_size = 10000000  # 5 million rows
+    
+
+    for file in filtered_zip_files:
         df = uz.read_csvs_from_zips(files=[file])[0]
         date_list = df['Date Time'].tolist()
         seg_id_list = df['Segment ID'].tolist()
