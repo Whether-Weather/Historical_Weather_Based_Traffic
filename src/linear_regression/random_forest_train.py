@@ -97,10 +97,10 @@ for segment_id, segment_data in grouped_data:
             # print(X.columns)
             # print(y.head())
 
-            # imputer = SimpleImputer(strategy='mean')
-            # X_imputed = imputer.fit_transform(X)
-            X_filled = X.fillna(method='ffill')
-            X_imputed = X.fillna(method='ffill').fillna(method='bfill')
+            imputer = SimpleImputer(strategy='mean')
+            X_imputed = imputer.fit_transform(X)
+            # X_filled = X.fillna(method='ffill')
+            # X_imputed = X.fillna(method='ffill').fillna(method='bfill')
 
 
             X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42, stratify=None)
