@@ -12,7 +12,7 @@ if gen_dir not in sys.path:
 
 county = 'HarrisCounty'
 models_directory = gen_dir + "/data/created_data/" + county
-models_filename = models_directory + "/random_forest_model_backfill.pkl"
+models_filename = models_directory + "/random_forest_model_n15.pkl"
 
 with open(models_filename, "rb") as f:
     loaded_models_dict = pickle.load(f)
@@ -34,3 +34,9 @@ for segment_id, model_info in loaded_models_dict.items():
     # print()
 print(f"r2 average {r2_total / i}")
 print(f"mae average {m / i}")
+
+# r2 average 0.33010720727733905
+# mae average 2.88497609616322
+
+# r2 average 0.3106663717212711
+# mae average 2.9248631513345322

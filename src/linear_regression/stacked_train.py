@@ -13,6 +13,8 @@ import os
 import time
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
@@ -79,52 +81,53 @@ models_dict = {}
 # Train a model for each segment ID
 
 i = 0 
-chunk = 200
+chunk = 50
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
             segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
-            # segment_data['Date Time'] = pd.to_datetime(segment_data['Date Time'])
-            # segment_data.loc[:, 'Hour'] = segment_data['Date Time'].dt.hour
             segment_data['Hour'] = pd.to_datetime(segment_data['Date Time']).dt.hour
             segment_data['is_raining'] = segment_data['prcp'].apply(lambda x: 1 if x > 0 else 0)
-
-
-            # print(segment_data.head())
-            # print(segment_data.columns)
             segment_data['prcp_log'] = np.log(segment_data['prcp'] + 1e-6)
 
             X = segment_data[['temp', 'dwpt', 'rhum', 'prcp_log', 'is_raining', 'wdir', 'wspd', 'pres', 'Hour']]
             y = segment_data['Speed(km/hour)']
 
-            # print(X.head())
-            # print(X.columns)
-            # print(y.head())
-
             imputer = SimpleImputer(strategy='mean')
             X_imputed = imputer.fit_transform(X)
-            # X_filled = X.fillna(method='ffill')
-            # X_imputed = X.fillna(method='ffill').fillna(method='bfill')
 
+            X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42)
 
-            X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42, stratify=None)
+            base_models = [
+                ("random_forest", RandomForestRegressor(n_estimators=100, random_state=42)),
+                ("xgboost", xgb.XGBRegressor(max_depth=5, n_estimators=100, learning_rate=0.1, random_state=42))         
+            ]
 
-            # Create and train a random forest regressor on the data
-            # model = RandomForestRegressor(n_estimators=15,random_state=42)
-            # model.fit(X_train, y_train)
+            stacked_X_train = []
+            stacked_X_test = []
 
-            model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.1, random_state=42)
-            model.fit(X_train, y_train)
+            for name, model in base_models:
+                model.fit(X_train, y_train)
+                
+                stacked_X_train.append(model.predict(X_train))
+                stacked_X_test.append(model.predict(X_test))
 
-            # Evaluate the model on test data
-            score = model.score(X_test, y_test)
+            stacked_X_train = np.column_stack(stacked_X_train)
+            stacked_X_test = np.column_stack(stacked_X_test)
+
+            meta_model = xgb.XGBRegressor(max_depth=3, n_estimators=50, learning_rate=0.1, random_state=42)
+            meta_model.fit(stacked_X_train, y_train)
+
+            y_pred = meta_model.predict(stacked_X_test)
+            r2 = r2_score(y_test, y_pred)
+            print("Stacked model R^2 score: ", r2)
 
             models_dict[segment_id] = {
-                'model': model,
-                'r2_score': score,
-                'mae': mean_absolute_error(y_test, model.predict(X_test)),
-                'mse': mean_squared_error(y_test, model.predict(X_test)),
-                'rmse': np.sqrt(mean_squared_error(y_test, model.predict(X_test))),
+                'model': meta_model,
+                'r2_score': r2,
+                'mae': mean_absolute_error(y_test, y_pred),
+                'mse': mean_squared_error(y_test, y_pred),
+                'rmse': np.sqrt(mean_squared_error(y_test, y_pred)),
                 'training_size': len(X_train),
                 'testing_size': len(X_test),
                 'feature_names': list(X.columns),
