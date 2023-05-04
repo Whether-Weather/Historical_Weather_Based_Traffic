@@ -15,6 +15,11 @@ import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
+from sklearn.ensemble import StackingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import SGDRegressor, LogisticRegression
+from xgboost import XGBRegressor
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
@@ -81,7 +86,7 @@ models_dict = {}
 # Train a model for each segment ID
 
 i = 0 
-chunk = 50
+chunk = 200
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
@@ -99,31 +104,30 @@ for segment_id, segment_data in grouped_data:
             X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42)
 
             base_models = [
-                ("random_forest", RandomForestRegressor(n_estimators=100, random_state=42)),
-                ("xgboost", xgb.XGBRegressor(max_depth=5, n_estimators=100, learning_rate=0.1, random_state=42))         
+                ('decision_tree', DecisionTreeRegressor(random_state=42)),
+                ('random_forest', RandomForestRegressor(n_estimators=15, random_state=42)),
+                ('xgb', XGBRegressor(max_depth=5, n_estimators=100, learning_rate=0.1, random_state=42)),
+                ('knearest', KNeighborsRegressor()),
+                ('sgd', SGDRegressor(random_state=42)),
+                # ('logistic_regression', LogisticRegression(random_state=42))
             ]
+            meta_model = xgb.XGBRegressor(max_depth  = 5, n_estimators = 100, learning_rate = 0.1, random_state=42)
+            #LinearRegression()
 
-            stacked_X_train = []
-            stacked_X_test = []
+            # Create the stacking model
+            stacked_model = StackingRegressor(estimators=base_models, final_estimator=meta_model)
 
-            for name, model in base_models:
-                model.fit(X_train, y_train)
-                
-                stacked_X_train.append(model.predict(X_train))
-                stacked_X_test.append(model.predict(X_test))
+            # Train the stacking model
+            stacked_model.fit(X_train, y_train)
 
-            stacked_X_train = np.column_stack(stacked_X_train)
-            stacked_X_test = np.column_stack(stacked_X_test)
+            # Make predictions using the stacked model
+            y_pred = stacked_model.predict(X_test)
 
-            meta_model = xgb.XGBRegressor(max_depth=3, n_estimators=50, learning_rate=0.1, random_state=42)
-            meta_model.fit(stacked_X_train, y_train)
-
-            y_pred = meta_model.predict(stacked_X_test)
+            # Calculate the R^2 score
             r2 = r2_score(y_test, y_pred)
-            print("Stacked model R^2 score: ", r2)
 
             models_dict[segment_id] = {
-                'model': meta_model,
+                'model': stacked_model,
                 'r2_score': r2,
                 'mae': mean_absolute_error(y_test, y_pred),
                 'mse': mean_squared_error(y_test, y_pred),
@@ -139,7 +143,8 @@ for segment_id, segment_data in grouped_data:
                 pickle.dump(models_dict, f)
             with open(error_file, "wb") as f:
                 pickle.dump(error_segments, f)
-    except:
+    except Exception as e:
+        print(e)
         error_segments.append(segment_id)
 
 # Save the models dictionary to a file

@@ -38,5 +38,8 @@ print(f"mae average {m / i}")
 # r2 average 0.33010720727733905
 # mae average 2.88497609616322
 
+# r2 average 0.335499189615741
+# mae average 2.903078186903178
+
 # r2 average 0.3106663717212711
 # mae average 2.9248631513345322

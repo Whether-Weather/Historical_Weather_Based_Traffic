@@ -169,6 +169,10 @@ with open(error_file, "wb") as f:
     pickle.dump(error_segments, f)
 
 
+
+# r2 average 0.3369184769603356
+# mae average 2.901023902003224
+
 #with imputer
 #r2 average 0.33010720727733905
 #mae average 2.88497609616322
