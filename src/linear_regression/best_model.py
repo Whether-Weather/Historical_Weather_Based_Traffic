@@ -13,8 +13,13 @@ import os
 import time
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
-from sklearn.feature_selection import RFECV
-from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
+from sklearn.ensemble import StackingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import SGDRegressor, LogisticRegression
+from xgboost import XGBRegressor
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
@@ -79,72 +84,56 @@ models_dict = {}
 #     with open(error_file, "wb") as f:
 #         pickle.dump(error_segments, f)
 # Train a model for each segment ID
-param_grid = {
-    'n_estimators': [50, 100, 200, 300],
-    'max_depth': [3, 5, 7],
-    'learning_rate': [0.01, 0.1, 0.2],
-    'subsample': [0.8, 0.9, 1.0],
-    'colsample_bytree': [0.8, 0.9, 1.0],
-    'gamma': [0, 0.1, 0.2]
-}
-
 
 i = 0 
-chunk = 200
+chunk = 50
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
             segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
             segment_data['Hour'] = pd.to_datetime(segment_data['Date Time']).dt.hour
             segment_data['is_raining'] = segment_data['prcp'].apply(lambda x: 1 if x > 0 else 0)
-
             segment_data['prcp_log'] = np.log(segment_data['prcp'] + 1e-6)
 
-            X = segment_data[['temp', 'dwpt', 'rhum', 'prcp_log', 'is_raining', 'snow', 'wdir', 'wspd', 'wpgt', 'pres', 'tsun', 'coco', 'Hour']]
-                #['temp', 'dwpt', 'rhum', 'prcp_log', 'is_raining', 'wdir', 'wspd', 'pres', 'Hour']]
+            X = segment_data[['temp', 'dwpt', 'rhum', 'prcp_log', 'is_raining', 'wdir', 'wspd', 'pres', 'Hour']]
             y = segment_data['Speed(km/hour)']
-
-           
 
             imputer = SimpleImputer(strategy='mean')
             X_imputed = imputer.fit_transform(X)
 
+            X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42)
 
-            X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42, stratify=None)
+            base_models = [
+                ('decision_tree', DecisionTreeRegressor(random_state=42)),
+                ('random_forest', RandomForestRegressor(n_estimators=15, random_state=42)),
+                ('xgb', XGBRegressor(max_depth=5, n_estimators=50, learning_rate=0.1, random_state=42)),
+                ('knearest', KNeighborsRegressor()),
+                ('sgd', SGDRegressor(random_state=42)),
+                ('logistic_regression', LogisticRegression(random_state=42))
+            ]
+            best_model = None
+            best_r2 = float('-inf')
+            best_mae = None
+            best_mse = None
 
-            
-            model = xgb.XGBRegressor(max_depth  = 5, n_estimators = 100, learning_rate = 0.1, random_state=42)
-            
-            # # Create the RFE object with cross-validation
-            # rfe = RFECV(estimator=model, step=1, cv=3, scoring='r2', n_jobs=-1)
+            for model_name, model in base_models:
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                r2 = r2_score(y_test, y_pred)
 
-            # # Fit the RFE object to the training data
-            # rfe.fit(X_train, y_train)
+                if r2 > best_r2:
+                    best_r2 = r2
+                    best_model = model
+                    best_mae = mean_absolute_error(y_test, y_pred)
+                    best_mse = mean_squared_error(y_test, y_pred)
 
-            # # Get the selected features
-            # selected_features = rfe.support_
-            # print("Selected features:", selected_features)
-
-            # # Get the feature ranking
-            # feature_ranking = rfe.ranking_
-            # print("Feature ranking:", feature_ranking)
-
-            # # Train the XGBRegressor model with the selected features
-            # X_train_selected = X_train[:, selected_features]
-            # X_test_selected = X_test[:, selected_features]
-
-            model.fit(X_train, y_train)
-
-            # Evaluate the model on test data
-            score = model.score(X_test, y_test)
-            
 
             models_dict[segment_id] = {
-                'model': model,
-                'r2_score': score,
-                'mae': mean_absolute_error(y_test, model.predict(X_test)),
-                'mse': mean_squared_error(y_test, model.predict(X_test)),
-                'rmse': np.sqrt(mean_squared_error(y_test, model.predict(X_test))),
+                'model': best_model,
+                'r2_score': best_r2,
+                'mae': best_mae,
+                'mse': best_mse,
+                'rmse': np.sqrt(best_mse),
                 'training_size': len(X_train),
                 'testing_size': len(X_test),
                 'feature_names': list(X.columns),
@@ -156,7 +145,8 @@ for segment_id, segment_data in grouped_data:
                 pickle.dump(models_dict, f)
             with open(error_file, "wb") as f:
                 pickle.dump(error_segments, f)
-    except:
+    except Exception as e:
+        print(e)
         error_segments.append(segment_id)
 
 # Save the models dictionary to a file
@@ -168,10 +158,6 @@ with open(models_filename, "wb") as f:
 with open(error_file, "wb") as f:
     pickle.dump(error_segments, f)
 
-
-
-# r2 average 0.3369184769603356
-# mae average 2.901023902003224
 
 #with imputer
 #r2 average 0.33010720727733905

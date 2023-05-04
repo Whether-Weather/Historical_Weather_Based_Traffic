@@ -18,6 +18,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
 
 
 gen_dir = str(Path(__file__).resolve().parents[2])
@@ -28,7 +30,7 @@ if gen_dir not in sys.path:
 #data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
 ####
-county = 'HarrisCounty'
+county = 'SantaClara'
 folder_path = gen_dir + "/data/created_data/" + county + "/combined_data"
 
 # List all the csv files in the folder
@@ -120,12 +122,16 @@ for segment_id, segment_data in grouped_data:
             # model.fit(X_train, y_train)
 
             # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.1, random_state=42)
-            model = LogisticRegression()
+           # Create a pipeline with StandardScaler and LogisticRegression
+            model = make_pipeline(StandardScaler(), LogisticRegression())
+
+            # Fit the pipeline to the training data
+            model.fit(X_train, y_train)
             #SGDClassifier()
             #GaussianNB()
             #KNeighborsClassifier(n_neighbors=7)
             #DecisionTreeClassifier()
-            model.fit(X_train, y_train)
+            
 
             # Evaluate the model on test data
             score = model.score(X_test, y_test)
@@ -147,7 +153,8 @@ for segment_id, segment_data in grouped_data:
                 pickle.dump(models_dict, f)
             with open(error_file, "wb") as f:
                 pickle.dump(error_segments, f)
-    except:
+    except Exception as E:
+        print(E)
         error_segments.append(segment_id)
 
 # Save the models dictionary to a file
