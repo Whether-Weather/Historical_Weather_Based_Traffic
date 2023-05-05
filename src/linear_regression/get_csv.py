@@ -87,7 +87,7 @@ def combine_data():
    
     filtered_zip_files = [file_path for file_path in zip_files if get_file_name_without_extension(file_path) not in existing_files_names]
     
-    chunk_size = 10000000  # 5 million rows
+    chunk_size = 20000000  # 5 million rows
     
 
     for file in filtered_zip_files:

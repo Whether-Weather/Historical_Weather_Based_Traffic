@@ -4,3 +4,13 @@
 3. get seg_to_station.py of input coordinates of center of county
 4. run get_csv.py -SC 
 5. run train_model.py
+
+
+
+docker run -v /path/to/your/host/input_data:/data/input_data -v /path/to/your/host/output_data:/data/output_data your_image_name python /app/src/your_subfolder/your_python_file.py --input_data /data/input_data --output_data /data/output_data
+
+
+docker run --name testmidpoint -v /Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/input_data/inrix/HarrisCounty:/data/input_data/inrix/HarrisCounty -v /Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/created_data/HarrisCounty/testdocker:/data/created_data/HarrisCounty/testdocker hwbt python /app/src/Inrix/Segments/midpoint.py --input_data /data/input_data/inrix/HarrisCounty --output_data /data/created_data/HarrisCounty/testdocker
+
+
+python src/Inrix/Segments/midpoint.py --input_data /Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/input_data/inrix/HarrisCounty --output_data /Users/joshkelleran/SeniorDesign/Whether-Weather/Historical_Weather_Based_Traffic/data/created_data/HarrisCounty/testdocker

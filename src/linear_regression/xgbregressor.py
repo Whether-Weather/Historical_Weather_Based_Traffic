@@ -23,7 +23,7 @@ if gen_dir not in sys.path:
 #data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
 ####
-county = 'HarrisCounty'
+county = 'SantaClara'
 folder_path = gen_dir + "/data/created_data/" + county + "/combined_data"
 
 # List all the csv files in the folder
@@ -98,9 +98,9 @@ for segment_id, segment_data in grouped_data:
             y = segment_data['Speed(km/hour)']
 
             plt.figure(figsize=(10, 6))
-            plt.scatter(segment_data['is_raining'], segment_data['Speed(km/hour)'])
-            plt.title(f'Speed vs prcp_bool for Segment ID {segment_id}')
-            plt.xlabel('is_raining')
+            plt.scatter(segment_data['prcp'], segment_data['Speed(km/hour)'])
+            plt.title(f'Speed vs prcp for Segment ID {segment_id}')
+            plt.xlabel('prcp')
             plt.ylabel('Speed (km/hour)')
             plt.show()
 
