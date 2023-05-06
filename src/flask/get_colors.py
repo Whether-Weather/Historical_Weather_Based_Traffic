@@ -5,7 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
 
-def get_colors(geojson, model, prcp, temp, rhum):
+def get_colors(geojson, model, segid_speeds, prcp, temp, rhum):
 # Get the geojson from flask 
     s = 0
 
@@ -18,7 +18,7 @@ def get_colors(geojson, model, prcp, temp, rhum):
         # print('predicted speed',y_pred)
         
         feature['properties']['speed'] = round(y_pred,2)
-        feature['properties']['color'] = get_color(y_pred, 30)
+        feature['properties']['color'] = get_color(y_pred, segid_speeds[seg_id]['Ref Speed(km/hour)'])
 
         s+=y_pred
         
