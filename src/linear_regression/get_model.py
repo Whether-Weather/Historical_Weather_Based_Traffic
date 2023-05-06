@@ -10,7 +10,7 @@ gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
     sys.path.append(gen_dir)
 
-county = 'HarrisCounty'
+county = 'SantaClara'
 models_directory = gen_dir + "/data/created_data/" + county
 models_filename = models_directory + "/random_forest_model_n15.pkl"
 

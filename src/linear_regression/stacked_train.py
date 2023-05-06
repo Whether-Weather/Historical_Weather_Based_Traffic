@@ -29,7 +29,7 @@ if gen_dir not in sys.path:
 #data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
 ####
-county = 'HarrisCounty'
+county = 'SantaClara'
 folder_path = gen_dir + "/data/created_data/" + county + "/combined_data"
 
 # List all the csv files in the folder
@@ -86,7 +86,7 @@ models_dict = {}
 # Train a model for each segment ID
 
 i = 0 
-chunk = 200
+chunk = 50
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
@@ -106,12 +106,13 @@ for segment_id, segment_data in grouped_data:
             base_models = [
                 ('decision_tree', DecisionTreeRegressor(random_state=42)),
                 ('random_forest', RandomForestRegressor(n_estimators=15, random_state=42)),
-                ('xgb', XGBRegressor(max_depth=5, n_estimators=100, learning_rate=0.1, random_state=42)),
+                ('xgb', XGBRegressor(max_depth=5, n_estimators=50, learning_rate=0.1, random_state=42)),
                 ('knearest', KNeighborsRegressor()),
                 ('sgd', SGDRegressor(random_state=42)),
-                # ('logistic_regression', LogisticRegression(random_state=42))
+                ('logistic_regression', LogisticRegression(random_state=42))
             ]
-            meta_model = xgb.XGBRegressor(max_depth  = 5, n_estimators = 100, learning_rate = 0.1, random_state=42)
+            meta_model = LinearRegression()
+            #xgb.XGBRegressor(max_depth  = 5, n_estimators = 100, learning_rate = 0.1, random_state=42)
             #LinearRegression()
 
             # Create the stacking model

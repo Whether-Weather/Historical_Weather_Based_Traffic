@@ -5,16 +5,15 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 import os
 import time
 import xgboost as xgb
-from sklearn.model_selection import GridSearchCV
-from sklearn.feature_selection import RFECV
-from sklearn.pipeline import Pipeline
+
+import matplotlib.pyplot as plt
+
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
@@ -24,7 +23,7 @@ if gen_dir not in sys.path:
 #data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
 ####
-county = 'HarrisCounty'
+county = 'SantaClara'
 folder_path = gen_dir + "/data/created_data/" + county + "/combined_data"
 
 # List all the csv files in the folder
@@ -79,14 +78,7 @@ models_dict = {}
 #     with open(error_file, "wb") as f:
 #         pickle.dump(error_segments, f)
 # Train a model for each segment ID
-param_grid = {
-    'n_estimators': [50, 100, 200, 300],
-    'max_depth': [3, 5, 7],
-    'learning_rate': [0.01, 0.1, 0.2],
-    'subsample': [0.8, 0.9, 1.0],
-    'colsample_bytree': [0.8, 0.9, 1.0],
-    'gamma': [0, 0.1, 0.2]
-}
+
 
 
 i = 0 
@@ -94,6 +86,7 @@ chunk = 200
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
+            print(segment_data.head())
             segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
             segment_data['Hour'] = pd.to_datetime(segment_data['Date Time']).dt.hour
             segment_data['is_raining'] = segment_data['prcp'].apply(lambda x: 1 if x > 0 else 0)
@@ -104,6 +97,13 @@ for segment_id, segment_data in grouped_data:
                 #['temp', 'dwpt', 'rhum', 'prcp_log', 'is_raining', 'wdir', 'wspd', 'pres', 'Hour']]
             y = segment_data['Speed(km/hour)']
 
+            plt.figure(figsize=(10, 6))
+            plt.scatter(segment_data['prcp'], segment_data['Speed(km/hour)'])
+            plt.title(f'Speed vs prcp for Segment ID {segment_id}')
+            plt.xlabel('prcp')
+            plt.ylabel('Speed (km/hour)')
+            plt.show()
+
            
 
             imputer = SimpleImputer(strategy='mean')
@@ -113,25 +113,7 @@ for segment_id, segment_data in grouped_data:
             X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42, stratify=None)
 
             
-            model = xgb.XGBRegressor(max_depth  = 5, n_estimators = 100, learning_rate = 0.1, random_state=42)
-            
-            # # Create the RFE object with cross-validation
-            # rfe = RFECV(estimator=model, step=1, cv=3, scoring='r2', n_jobs=-1)
-
-            # # Fit the RFE object to the training data
-            # rfe.fit(X_train, y_train)
-
-            # # Get the selected features
-            # selected_features = rfe.support_
-            # print("Selected features:", selected_features)
-
-            # # Get the feature ranking
-            # feature_ranking = rfe.ranking_
-            # print("Feature ranking:", feature_ranking)
-
-            # # Train the XGBRegressor model with the selected features
-            # X_train_selected = X_train[:, selected_features]
-            # X_test_selected = X_test[:, selected_features]
+            model = xgb.XGBRegressor(max_depth  = 5, n_estimators = 50, learning_rate = 0.1, random_state=42)
 
             model.fit(X_train, y_train)
 

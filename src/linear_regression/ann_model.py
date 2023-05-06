@@ -26,7 +26,7 @@ if gen_dir not in sys.path:
 #data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
 ####
-county = 'HarrisCounty'
+county = 'SantaClara'
 folder_path = gen_dir + "/data/created_data/" + county + "/combined_data"
 
 # List all the csv files in the folder
@@ -71,10 +71,10 @@ models_dict = {}
 i = 0 
 chunk = 10
 
-def r2_score(y_true, y_pred):
-    SS_res = K.sum(K.square(y_true - y_pred))
-    SS_tot = K.sum(K.square(y_true - K.mean(y_true)))
-    return (1 - SS_res / (SS_tot + K.epsilon()))
+# def r2_score(y_true, y_pred):
+#     SS_res = K.sum(K.square(y_true - y_pred))
+#     SS_tot = K.sum(K.square(y_true - K.mean(y_true)))
+#     return (1 - SS_res / (SS_tot + K.epsilon()))
 
 # Create a simple ANN model for regression
 def create_ann_model(input_dim):
@@ -83,7 +83,7 @@ def create_ann_model(input_dim):
     model.add(Dense(16, activation='relu'))
     model.add(Dense(1, activation='linear'))
 
-    model.compile(loss='mean_squared_error', optimizer='adam', metrics=[r2_score, MeanSquaredError(), MeanAbsoluteError(), RootMeanSquaredError()])
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=[MeanSquaredError(), MeanAbsoluteError(), RootMeanSquaredError()])
     return model
 
 for segment_id, segment_data in grouped_data:

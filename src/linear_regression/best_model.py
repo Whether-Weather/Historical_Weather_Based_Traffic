@@ -13,14 +13,13 @@ import os
 import time
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.linear_model import SGDClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline
-
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
+from sklearn.ensemble import StackingRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import SGDRegressor, LogisticRegression
+from xgboost import XGBRegressor
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
@@ -30,7 +29,7 @@ if gen_dir not in sys.path:
 #data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
 ####
-county = 'HarrisCounty'
+county = 'SantaClara'
 folder_path = gen_dir + "/data/created_data/" + county + "/combined_data"
 
 # List all the csv files in the folder
@@ -87,61 +86,54 @@ models_dict = {}
 # Train a model for each segment ID
 
 i = 0 
-chunk = 200
+chunk = 50
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
             segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
-            # segment_data['Date Time'] = pd.to_datetime(segment_data['Date Time'])
-            # segment_data.loc[:, 'Hour'] = segment_data['Date Time'].dt.hour
             segment_data['Hour'] = pd.to_datetime(segment_data['Date Time']).dt.hour
             segment_data['is_raining'] = segment_data['prcp'].apply(lambda x: 1 if x > 0 else 0)
-
-
-            # print(segment_data.head())
-            # print(segment_data.columns)
             segment_data['prcp_log'] = np.log(segment_data['prcp'] + 1e-6)
 
             X = segment_data[['temp', 'dwpt', 'rhum', 'prcp_log', 'is_raining', 'wdir', 'wspd', 'pres', 'Hour']]
             y = segment_data['Speed(km/hour)']
 
-            # print(X.head())
-            # print(X.columns)
-            # print(y.head())
-
             imputer = SimpleImputer(strategy='mean')
             X_imputed = imputer.fit_transform(X)
-            # X_filled = X.fillna(method='ffill')
-            # X_imputed = X.fillna(method='ffill').fillna(method='bfill')
 
+            X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42)
 
-            X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42, stratify=None)
+            base_models = [
+                ('decision_tree', DecisionTreeRegressor(random_state=42)),
+                ('random_forest', RandomForestRegressor(n_estimators=15, random_state=42)),
+                ('xgb', XGBRegressor(max_depth=5, n_estimators=50, learning_rate=0.1, random_state=42)),
+                ('knearest', KNeighborsRegressor()),
+                ('sgd', SGDRegressor(random_state=42)),
+                ('logistic_regression', LogisticRegression(random_state=42))
+            ]
+            best_model = None
+            best_r2 = float('-inf')
+            best_mae = None
+            best_mse = None
 
-            # Create and train a random forest regressor on the data
-            # model = RandomForestRegressor(n_estimators=15,random_state=42)
-            # model.fit(X_train, y_train)
+            for model_name, model in base_models:
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                r2 = r2_score(y_test, y_pred)
 
-            # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.1, random_state=42)
-           # Create a pipeline with StandardScaler and LogisticRegression
-            model = make_pipeline(StandardScaler(), LogisticRegression())
+                if r2 > best_r2:
+                    best_r2 = r2
+                    best_model = model
+                    best_mae = mean_absolute_error(y_test, y_pred)
+                    best_mse = mean_squared_error(y_test, y_pred)
 
-            # Fit the pipeline to the training data
-            model.fit(X_train, y_train)
-            #SGDClassifier()
-            #GaussianNB()
-            #KNeighborsClassifier(n_neighbors=7)
-            #DecisionTreeClassifier()
-            
-
-            # Evaluate the model on test data
-            score = model.score(X_test, y_test)
 
             models_dict[segment_id] = {
-                'model': model,
-                'r2_score': score,
-                'mae': mean_absolute_error(y_test, model.predict(X_test)),
-                'mse': mean_squared_error(y_test, model.predict(X_test)),
-                'rmse': np.sqrt(mean_squared_error(y_test, model.predict(X_test))),
+                'model': best_model,
+                'r2_score': best_r2,
+                'mae': best_mae,
+                'mse': best_mse,
+                'rmse': np.sqrt(best_mse),
                 'training_size': len(X_train),
                 'testing_size': len(X_test),
                 'feature_names': list(X.columns),
@@ -153,8 +145,8 @@ for segment_id, segment_data in grouped_data:
                 pickle.dump(models_dict, f)
             with open(error_file, "wb") as f:
                 pickle.dump(error_segments, f)
-    except Exception as E:
-        print(E)
+    except Exception as e:
+        print(e)
         error_segments.append(segment_id)
 
 # Save the models dictionary to a file
