@@ -14,7 +14,7 @@ if gen_dir not in sys.path:
 
 
 app = Flask(__name__)
-CORS(app, origins="http://localhost:3000")
+CORS(app, origins="*")
 
 import pickle
 import subprocess
@@ -27,11 +27,10 @@ if gen_dir not in sys.path:
 
 county = 'SantaClara'
 models_directory = gen_dir + "/data/created_data/" + county  + "/"
-models_filename = models_directory + "santaclara.pkl"
+models_filename = models_directory + "random_forest_model_n15.pkl"
 
 with open(models_filename, "rb") as f:
     loaded_models_dict = pickle.load(f)
-
 
 
 filename = gen_dir + '/data/created_data/' + county + '/' + county + '.json'
@@ -40,17 +39,18 @@ with open(filename, "rb") as f:
  
  
 fn = gen_dir + '/data/created_data/' + county + '/segid_to_refspeed.pkl'
-with open(filename, "rb") as f:
-    segid_speeds = json.load(f)
+with open(fn, "rb") as f:
+    segid_speeds = pickle.load(f)
 
 @app.route('/get-model', methods=['POST'])
 def get_model():
     print(request.get_json())
     data = request.get_json()
-
-    response = gc.get_colors(geojson, loaded_models_dict, segid_speeds, data['rain'], data['temperature'], data['humidity'])
+    if data:
+        response = gc.get_colors(geojson, loaded_models_dict, segid_speeds, data['rain'], data['temperature'], data['humidity'], data['time'], data['dew'], data['direction'], data['speed'], data['pressure'])
+    else: 
+        response = gc.get_colors_LM(geojson, loaded_models_dict, segid_speeds)
     return jsonify(response)
-    
     
 
 if __name__ == '__main__':
