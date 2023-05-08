@@ -1,28 +1,26 @@
-import datetime
+from datetime import datetime, timedelta
 
 import numpy as np
+from meteostat import Hourly, Stations
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
 
-def get_colors(geojson, model, segid_speeds, prcp, temp, rhum):
+def get_colors(geojson, model, segid_speeds, prcp, temp, rhum, time, dew, direction, speed, pres):
 # Get the geojson from flask 
-    s = 0
-
     for feature in geojson['features']:
         seg_id = feature['properties']['segment_id']
-        X_test = [[float(temp), 0, float(rhum), float(prcp), 0, 0, 0, 0, datetime.datetime.now().hour]]
+        X_test = [[float(temp), float(dew), float(rhum), float(np.log(float(prcp) + 1e-6)), float(1 if float(prcp) > 0 else 0), float(direction), float(speed), float(pres), float(time)]]
         
         # Predict the speed using the linear regression model and the feature vector
-        y_pred = model[int(seg_id)]['model'].predict(X_test)[0]
+        if int(seg_id) in model:
+            y_pred = model[int(seg_id)]['model'].predict(X_test)[0]
         # print('predicted speed',y_pred)
         
-        feature['properties']['speed'] = round(y_pred,2)
-        feature['properties']['color'] = get_color(y_pred, segid_speeds[seg_id]['Ref Speed(km/hour)'])
-
-        s+=y_pred
-        
-    print(float(temp), float(rhum), float(prcp), s/len(geojson['features']))
+            feature['properties']['Speed'] = round(y_pred,2)
+            feature['properties']['color'], feature['properties']['Percent_Difference'] = get_color(y_pred, segid_speeds[seg_id]['Ref Speed(km/hour)'])
+            feature['properties']['Reference_Speed'] = segid_speeds[seg_id]['Ref Speed(km/hour)']
+            
     return {'geojson': geojson}
         
 # For feature in features, get sgement_id from properties
@@ -31,7 +29,38 @@ def get_colors(geojson, model, segid_speeds, prcp, temp, rhum):
 
 #Return this as response to front-end, which displays data and refreshes 
 
-
+def get_colors_LM(geojson, model, segid_speeds):
+    stations = Stations()
+    nearby_station = stations.nearby(*(37.3541, -121.9552))
+    closest_station = nearby_station.fetch(1)
+    
+    data = Hourly(closest_station, start=datetime.now() - timedelta(hours=1), end=datetime.now())
+    data = data.fetch()
+    prcp = data['prcp'][0]
+    temp = data['temp'][0]
+    rhum = data['rhum'][0]
+    time = datetime.now().hour
+    dew = data['dwpt'][0]
+    direction = data['wdir'][0]
+    speed = data['wspd'][0]
+    pres = data['pres'][0]
+    
+    for feature in geojson['features']:
+        seg_id = feature['properties']['segment_id']
+        X_test = [[float(temp), float(dew), float(rhum), float(np.log(float(prcp) + 1e-6)), float(1 if float(prcp) > 0 else 0), float(direction), float(speed), float(pres), float(time)]]
+        
+        # Predict the speed using the linear regression model and the feature vector
+        if int(seg_id) in model:
+            y_pred = model[int(seg_id)]['model'].predict(X_test)[0]
+        # print('predicted speed',y_pred)
+        
+            feature['properties']['Speed'] = round(y_pred,2)
+            feature['properties']['color'], feature['properties']['Percent_Difference'] = get_color(y_pred, segid_speeds[seg_id]['Ref Speed(km/hour)'])
+            feature['properties']['Reference_Speed'] = segid_speeds[seg_id]['Ref Speed(km/hour)']
+            
+    return {'geojson': geojson, 'weather': data.to_json()}
+    
+    
 
 def get_color(current_speed, historical_speed):
     """Return an RGB array between dark red (-20% slower) and bright green (+20% faster)
@@ -43,15 +72,15 @@ def get_color(current_speed, historical_speed):
     # Determine the color based on the percentage difference
     if percentage_diff <= -20:
         # Dark red for -20% or slower
-        return [139, 0, 0]
+        return [[139, 0, 0], percentage_diff]
     elif percentage_diff >= 20:
         # Bright green for +20% or faster
-        return [0, 255, 0]
+        return [[0, 255, 0], percentage_diff]
     else:
         # Calculate the color between red and green based on the percentage difference
         red = max(0, min(255, int(255 * (120 + percentage_diff) / 140)))
         green = max(0, min(255, int(255 * (120 - percentage_diff) / 140)))
         blue = 0
-        return [red, green, blue]
+        return [[red, green, blue], percentage_diff]
 
 

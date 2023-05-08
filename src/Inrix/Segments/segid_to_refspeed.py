@@ -16,7 +16,7 @@ from utils import unzip as uz
 # Santa_Clara_Path = '/data/input_data/inrix/SantaClara/santa_clara_2022-04-01_to_2022-06-01_60_min_part_1/metadata.csv'
 # Seattle_Path = '/data/created_data/input_data/inrix/Seattle/metadata.csv'
 
-county = "Santa Clara"
+county = "SantaClara"
 columns_to_keep = ['Segment ID', 'Hist Av Speed(km/hour)', 'Ref Speed(km/hour)']
 files = uz.get_zip_files(folder_path= gen_dir + '/data/input_data/inrix/' + county)
 dfs = uz.read_csvs_from_zips(name = 'data.csv', files=files, 
@@ -29,14 +29,13 @@ seg_id_list = df['Segment ID'].tolist()
 ref_speed_list = df['Ref Speed(km/hour)'].tolist()
 hist_speed_list = df['Hist Av Speed(km/hour)'].tolist()
 
-midpoints = {}
 seg_to_reference_speed = {}
 
 for ref, hist, seg_id in zip(ref_speed_list, hist_speed_list, seg_id_list):
-    midpoints[str(seg_id)] = {'Ref Speed(km/hour)' : ref, 'Hist Av Speed(km/hour)': hist}
+    seg_to_reference_speed[str(seg_id)] = {'Ref Speed(km/hour)' : ref, 'Hist Av Speed(km/hour)': hist}
 
 
 with open(gen_dir + '/data/created_data/' + county + '/segid_to_refspeed.pkl', "wb") as f:
-    pickle.dump(midpoints, f)
+    pickle.dump(seg_to_reference_speed, f)
 
 
