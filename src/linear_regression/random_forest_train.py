@@ -5,21 +5,17 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 import os
 import time
-import xgboost as xgb
-from sklearn.model_selection import GridSearchCV
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.linear_model import SGDClassifier
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
+
+import math
 
 
 gen_dir = str(Path(__file__).resolve().parents[2])
@@ -39,19 +35,22 @@ pkl_files = [f for f in os.listdir(folder_path) if f.endswith('combined.pkl')]
 # Create a list of file paths
 file_paths = [os.path.join(folder_path, file) for file in pkl_files]
 
+
 dfs = []
+data = None
 for file in file_paths:
     time1 = time.perf_counter()
 
     df = pd.read_pickle(file)
+    dfs.append(df)
     # print(df.head(10))
     time2 = time.perf_counter()
     print(time2 - time1)
-    dfs.append(df)
+    del df
+    
 
 data = pd.concat(dfs, ignore_index=True)
-dfs = None
-df = None
+del dfs
 
 
 ####
@@ -64,7 +63,7 @@ grouped_data = data.groupby('Segment ID')
 
 # Directory to store the models
 models_directory = gen_dir + "/data/created_data/" + county
-name = 'random_forest_model_n15'
+name = 'may7logistic'
 models_filename = models_directory + "/" + name + ".pkl"
 error_file = models_directory + '/' + name + '_error.pkl'
 

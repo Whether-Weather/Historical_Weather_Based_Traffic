@@ -23,7 +23,7 @@ if gen_dir not in sys.path:
 #data = pd.read_csv(gen_dir + '/data/created_data/training_data/combined_data.csv')
 
 ####
-county = 'SantaClara'
+county = 'HarrisCounty'
 folder_path = gen_dir + "/data/created_data/" + county + "/combined_data"
 
 # List all the csv files in the folder
@@ -57,7 +57,7 @@ grouped_data = data.groupby('Segment ID')
 
 # Directory to store the models
 models_directory = gen_dir + "/data/created_data/" + county
-name = 'random_forest_model_n15'
+name = 'xgb_model'
 models_filename = models_directory + "/" + name + ".pkl"
 error_file = models_directory + '/' + name + '_error.pkl'
 
@@ -86,7 +86,7 @@ chunk = 200
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
-            print(segment_data.head())
+            # print(segment_data.head())
             segment_data = segment_data.dropna(subset=['Speed(km/hour)'])
             segment_data['Hour'] = pd.to_datetime(segment_data['Date Time']).dt.hour
             segment_data['is_raining'] = segment_data['prcp'].apply(lambda x: 1 if x > 0 else 0)
@@ -97,12 +97,12 @@ for segment_id, segment_data in grouped_data:
                 #['temp', 'dwpt', 'rhum', 'prcp_log', 'is_raining', 'wdir', 'wspd', 'pres', 'Hour']]
             y = segment_data['Speed(km/hour)']
 
-            plt.figure(figsize=(10, 6))
-            plt.scatter(segment_data['prcp'], segment_data['Speed(km/hour)'])
-            plt.title(f'Speed vs prcp for Segment ID {segment_id}')
-            plt.xlabel('prcp')
-            plt.ylabel('Speed (km/hour)')
-            plt.show()
+            # plt.figure(figsize=(10, 6))
+            # plt.scatter(segment_data['Hour'], segment_data['Speed(km/hour)'])
+            # plt.title(f'Speed vs Hour for Segment ID {segment_id}')
+            # plt.xlabel('Hour')
+            # plt.ylabel('Speed (km/hour)')
+            # plt.show()
 
            
 
@@ -113,7 +113,7 @@ for segment_id, segment_data in grouped_data:
             X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42, stratify=None)
 
             
-            model = xgb.XGBRegressor(max_depth  = 5, n_estimators = 50, learning_rate = 0.1, random_state=42)
+            model = xgb.XGBRegressor(max_depth  = 4, n_estimators = 50, learning_rate = 0.1, random_state=42)
 
             model.fit(X_train, y_train)
 

@@ -25,7 +25,7 @@ def get_weather_dict(station_id, start = datetime.datetime(2022, 3, 1), end = da
 
     return weather_data
 
-#get_weather_dict("KSJC0")
+x = get_weather_dict("KSJC0")
 
 if __name__ == '__main__':
     a = 441531089
