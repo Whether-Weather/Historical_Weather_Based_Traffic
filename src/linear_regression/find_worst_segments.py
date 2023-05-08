@@ -18,10 +18,10 @@ models_filename = models_directory + "santaclara.pkl"
 with open(models_filename, "rb") as f:
     loaded_models_dict = pickle.load(f)
 
-import utils as uz
+from utils import unzip as uz
 
-county = "HarrisCounty"
-columns_to_keep = ['Segment ID', 'Start Latitude', 'Start Longitude', 'End Latitude', 'End Longitude', 'Segment Length(Kilometers)']
+county = "SantaClara"
+columns_to_keep = ['Segment ID', 'Start Latitude', 'Start Longitude', 'End Latitude', 'End Longitude', 'Segment Length(Kilometers)', 'Road', 'Direction']
 
 input_folder_path = gen_dir + '/data/input_data/inrix/' + county
 
@@ -73,8 +73,8 @@ differences.sort(key=lambda x: x[1], reverse=True)
 top_30_differences = differences[:30]
 
 for diff in top_30_differences:
-    data[diff[0]].append(diff[1])
-    print(data[diff[0]])
+    data[str(diff[0])].append(diff[1] * 16.66666666)
+    print(data[str(diff[0])])
 
 # for diff in top_10_differences:
 #     print(diff[0] + f": {1/diff[1] * 100 }")

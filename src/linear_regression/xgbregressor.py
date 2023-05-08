@@ -82,7 +82,7 @@ models_dict = {}
 
 
 i = 0 
-chunk = 200
+chunk = 1000
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
@@ -113,7 +113,7 @@ for segment_id, segment_data in grouped_data:
             X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.2, random_state=42, stratify=None)
 
             
-            model = xgb.XGBRegressor(max_depth  = 4, n_estimators = 50, learning_rate = 0.1, random_state=42)
+            model = xgb.XGBRegressor(max_depth  = 5, n_estimators = 100, learning_rate = 0.1, random_state=42)
 
             model.fit(X_train, y_train)
 

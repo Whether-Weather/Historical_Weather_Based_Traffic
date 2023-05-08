@@ -70,23 +70,23 @@ error_file = models_directory + '/' + name + '_error.pkl'
 # Dictionary to store the trained models
 error_segments = []
 models_dict = {}
-# try:
-#     with open(models_filename, "rb") as f:
-#         models_dict = pickle.load(f)
-# except FileNotFoundError:
-#     with open(models_filename, "wb") as f:
-#         pickle.dump(models_dict, f)
+try:
+    with open(models_filename, "rb") as f:
+        models_dict = pickle.load(f)
+except FileNotFoundError:
+    with open(models_filename, "wb") as f:
+        pickle.dump(models_dict, f)
 
-# try:
-#     with open(error_file, "rb") as f:
-#         error_segments = pickle.load(f)
-# except FileNotFoundError:
-#     with open(error_file, "wb") as f:
-#         pickle.dump(error_segments, f)
+try:
+    with open(error_file, "rb") as f:
+        error_segments = pickle.load(f)
+except FileNotFoundError:
+    with open(error_file, "wb") as f:
+        pickle.dump(error_segments, f)
 # Train a model for each segment ID
 
 i = 0 
-chunk = 200
+chunk = 10000
 for segment_id, segment_data in grouped_data:
     try:
         if segment_id not in models_dict:
@@ -122,7 +122,7 @@ for segment_id, segment_data in grouped_data:
 
             # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.1, random_state=42)
            # Create a pipeline with StandardScaler and LogisticRegression
-            model = make_pipeline(StandardScaler(), LogisticRegression())
+            model = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
 
             # Fit the pipeline to the training data
             model.fit(X_train, y_train)
