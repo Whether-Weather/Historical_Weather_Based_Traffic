@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 from meteostat import Hourly, Stations
@@ -37,13 +37,13 @@ def get_colors_LM(geojson, model, segid_speeds):
     closest_station = nearby_station.fetch(1)
 
     
-    data = Hourly(closest_station, start=datetime.now() - timedelta(hours=1), end=datetime.now())
-    print(data)
+    data = Hourly(closest_station, start=datetime.now() - timedelta(hours=1) + timedelta(hours=7), end=datetime.now()+ timedelta(hours=7))
     data = data.fetch()
+    print(data)
     prcp = float(data['prcp'][0])
     temp = float(data['temp'][0])
     rhum = float(data['rhum'][0])
-    time = datetime.now().hour
+    time = (datetime.now().hour+7)%24
     dew = float(data['dwpt'][0])
     direction = float(data['wdir'][0])
     speed = float(data['wspd'][0])
@@ -62,7 +62,7 @@ def get_colors_LM(geojson, model, segid_speeds):
             feature['properties']['color'], feature['properties']['Percent_Difference'] = get_color(y_pred, segid_speeds[seg_id]['Ref Speed(km/hour)'])
             feature['properties']['Reference_Speed'] = float(segid_speeds[seg_id]['Ref Speed(km/hour)'])
 
-    return {'geojson': geojson, 'weather': data.to_json()}
+    return {'geojson': geojson, 'weather': {"Rain (in)":prcp,"Temperature (Celsius)": temp,"Humidity (%)":rhum, "Time (UTC)":time,"Dew Point (%)": dew,"Wind Direction (Degrees)":direction, "Wind Speed (km/hr)":speed,"Air Pressure (hpa)":pres}}
     
     
 
