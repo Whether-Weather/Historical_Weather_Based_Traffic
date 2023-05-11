@@ -7,7 +7,9 @@ from sklearn.preprocessing import StandardScaler
 
 
 def get_colors(geojson, model, segid_speeds, prcp, temp, rhum, time, dew, direction, speed, pres):
+    print("In Colors")
 # Get the geojson from flask 
+    wrong_seg = []
     for feature in geojson['features']:
         seg_id = feature['properties']['segment_id']
         X_test = [[float(temp), float(dew), float(rhum), float(np.log(float(prcp) + 1e-6)), float(1 if float(prcp) > 0 else 0), float(direction), float(speed), float(pres), float(time)]]
@@ -17,9 +19,9 @@ def get_colors(geojson, model, segid_speeds, prcp, temp, rhum, time, dew, direct
             y_pred = model[int(seg_id)]['model'].predict(X_test)[0]
         # print('predicted speed',y_pred)
         
-            feature['properties']['Speed'] = round(y_pred,2)
+            feature['properties']['Speed'] = float(round(y_pred,2))
             feature['properties']['color'], feature['properties']['Percent_Difference'] = get_color(y_pred, segid_speeds[seg_id]['Ref Speed(km/hour)'])
-            feature['properties']['Reference_Speed'] = segid_speeds[seg_id]['Ref Speed(km/hour)']
+            feature['properties']['Reference_Speed'] = float(segid_speeds[seg_id]['Ref Speed(km/hour)'])
             
     return {'geojson': geojson}
         
@@ -33,17 +35,19 @@ def get_colors_LM(geojson, model, segid_speeds):
     stations = Stations()
     nearby_station = stations.nearby(*(37.3541, -121.9552))
     closest_station = nearby_station.fetch(1)
+
     
     data = Hourly(closest_station, start=datetime.now() - timedelta(hours=1), end=datetime.now())
+    print(data)
     data = data.fetch()
-    prcp = data['prcp'][0]
-    temp = data['temp'][0]
-    rhum = data['rhum'][0]
+    prcp = float(data['prcp'][0])
+    temp = float(data['temp'][0])
+    rhum = float(data['rhum'][0])
     time = datetime.now().hour
-    dew = data['dwpt'][0]
-    direction = data['wdir'][0]
-    speed = data['wspd'][0]
-    pres = data['pres'][0]
+    dew = float(data['dwpt'][0])
+    direction = float(data['wdir'][0])
+    speed = float(data['wspd'][0])
+    pres = float(data['pres'][0])
     
     for feature in geojson['features']:
         seg_id = feature['properties']['segment_id']
@@ -54,10 +58,10 @@ def get_colors_LM(geojson, model, segid_speeds):
             y_pred = model[int(seg_id)]['model'].predict(X_test)[0]
         # print('predicted speed',y_pred)
         
-            feature['properties']['Speed'] = round(y_pred,2)
+            feature['properties']['Speed'] = float(round(y_pred,2))
             feature['properties']['color'], feature['properties']['Percent_Difference'] = get_color(y_pred, segid_speeds[seg_id]['Ref Speed(km/hour)'])
-            feature['properties']['Reference_Speed'] = segid_speeds[seg_id]['Ref Speed(km/hour)']
-            
+            feature['properties']['Reference_Speed'] = float(segid_speeds[seg_id]['Ref Speed(km/hour)'])
+
     return {'geojson': geojson, 'weather': data.to_json()}
     
     

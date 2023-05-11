@@ -16,9 +16,10 @@ from utils import unzip as uz
 # Santa_Clara_Path = '/data/input_data/inrix/SantaClara/santa_clara_2022-04-01_to_2022-06-01_60_min_part_1/metadata.csv'
 # Seattle_Path = '/data/created_data/input_data/inrix/Seattle/metadata.csv'
 
-county = "SantaClara"
+county = "HarrisCounty"
 columns_to_keep = ['Segment ID', 'Hist Av Speed(km/hour)', 'Ref Speed(km/hour)']
 files = uz.get_zip_files(folder_path= gen_dir + '/data/input_data/inrix/' + county)
+files = files[:2]
 dfs = uz.read_csvs_from_zips(name = 'data.csv', files=files, 
                                 columns_to_keep=columns_to_keep)
 
