@@ -31,15 +31,19 @@ def get_colors(geojson, model, segid_speeds, prcp, temp, rhum, time, dew, direct
 
 #Return this as response to front-end, which displays data and refreshes 
 
-def get_colors_LM(geojson, model, segid_speeds):
+def get_colors_LM(geojson, model, segid_speeds, county):
     stations = Stations()
-    nearby_station = stations.nearby(*(37.3541, -121.9552))
+    coordinates = ()
+    if county == "San Jose, CA":
+        coordinates = (37.3541, -121.9552)
+    elif county == "Harris County, Texas":
+        coordinates = (29.763564, -95.447633)
+    nearby_station = stations.nearby(*coordinates)
     closest_station = nearby_station.fetch(1)
 
     
     data = Hourly(closest_station, start=datetime.now() - timedelta(hours=1) + timedelta(hours=7), end=datetime.now()+ timedelta(hours=7))
     data = data.fetch()
-    print(data)
     prcp = float(data['prcp'][0])
     temp = float(data['temp'][0])
     rhum = float(data['rhum'][0])

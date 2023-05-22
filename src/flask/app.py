@@ -6,6 +6,8 @@ import get_colors as gc
 from flask_cors import CORS
 
 from flask import Flask, jsonify, request
+import pickle
+
 
 gen_dir = str(Path(__file__).resolve().parents[2])
 if gen_dir not in sys.path:
@@ -14,85 +16,69 @@ if gen_dir not in sys.path:
 
 
 app = Flask(__name__)
-CORS(app, origins="*")
-
-import pickle
-import subprocess
-import sys
-from pathlib import Path
-
-gen_dir = str(Path(__file__).resolve().parents[2])
-if gen_dir not in sys.path:
-    sys.path.append(gen_dir)
-
-county = 'SantaClara'
-models_directory = gen_dir + "/data/created_data/" + county  + "/"
-models_filename = models_directory + "random_forest_model.pkl"
-
-with open(models_filename, "rb") as f:
-    loaded_models_dict = pickle.load(f)
+CORS(app)
+# CORS(app, resources={r"/*": {"origins": "https://whether-weather.github.io"}})
+  
 
 
-filename = gen_dir + '/data/created_data/' + county + '/' + county + '.json'
-with open(filename, "rb") as f:
-    geojson = json.load(f)
+def get_files(model_county):
+    print(model_county)
+    if model_county == "San Jose, CA":
+        county = "SantaClara"
+    elif model_county == "Harris County, Texas":
+        county = "HarrisCounty"
+    models_directory = gen_dir + "/data/created_data/" + county  + "/"
+    models_filename = models_directory + county + "_model.pkl"
+    with open(models_filename, "rb") as f:
+        loaded_models_dict = pickle.load(f)
 
-fn = gen_dir + '/data/created_data/' + county + '/segid_to_refspeed.pkl'
-with open(fn, "rb") as f:
-    segid_speeds = pickle.load(f)    
+    filename = gen_dir + '/data/created_data/' + county + '/' + county + '.json'
+    with open(filename, "rb") as f:
+        geojson = json.load(f)
 
-new_county = 'HarrisCounty'
-houston_filename = gen_dir + '/data/created_data/' + new_county + '/' + new_county + '.json'
-with open(houston_filename, "rb") as f:
-    houston_geojson = json.load(f)
+    fn = gen_dir + '/data/created_data/' + county + '/segid_to_refspeed.pkl'
+    with open(fn, "rb") as f:
+        segid_speeds = pickle.load(f)   
 
-houston_models_directory = gen_dir + "/data/created_data/" + new_county  + "/"
-houston_models_filename = houston_models_directory + "may7logistic.pkl"
-
-with open(houston_models_filename, "rb") as f:
-    houston_loaded_models_dict = pickle.load(f)
-
-houston_fn = gen_dir + '/data/created_data/' + new_county + '/segid_to_refspeed.pkl'
-with open(houston_fn, "rb") as f:
-    houston_segid_speeds = pickle.load(f)    
-
-county_data = {
-    "San Jose, CA" : {
+    county_data = {
         "model": loaded_models_dict,
         "segid_speeds": segid_speeds,
         "geojson": geojson
-    },
-    "Harris County, Texas": {
-        "model": houston_loaded_models_dict,
-        "segid_speeds": houston_segid_speeds,
-        "geojson": houston_geojson
-
     }
-}
+    return county_data
+
+
+data_dict = get_files("San Jose, CA")
+
 
 @app.route('/get-model', methods=['POST'])
 def get_model():
-    # print(request.get_json())
     data = request.get_json()
+    data_dict = get_files(data['county'])
+
     if set(data.keys()) != {'county'}:
-        print(data['county'])
-        response = gc.get_colors(county_data[data['county']]['geojson'], county_data[data['county']]['model'], county_data[data['county']]['segid_speeds'], data['rain'], data['temperature'], data['humidity'], data['time'], data['dew'], data['direction'], data['speed'], data['pressure'])
+        print(set(data.keys()))
+        response = gc.get_colors(data_dict['geojson'], data_dict['model'], data_dict['segid_speeds'], data['rain'], data['temperature'], data['humidity'], data['time'], data['dew'], data['direction'], data['speed'], data['pressure'])
     else: 
-        response = gc.get_colors_LM(county_data[data['county']]['geojson'], county_data[data['county']]['model'], county_data[data['county']]['segid_speeds'])
+        print("else")
+        response = gc.get_colors_LM(data_dict['geojson'], data_dict['model'], data_dict['segid_speeds'], data['county'])
     #print(response)
     return jsonify(response)
 
 @app.route('/get-new-model', methods=['POST'])
 def get_new_model():
     data = request.get_json()
-    if data:
-        response = county_data[data['county']]['geojson']
+    data_dict = get_files(data['county'])
+    print(data)
+    if data['map'] == 'MLMAP':
+        print("bla")
+        response = {'geojson': data_dict['geojson']}
     else:
-        response = None
+        print("here")
+        response = gc.get_colors_LM(data_dict['geojson'], data_dict['model'], data_dict['segid_speeds'], data['county'])
     return jsonify(response)
 
     
 
 if __name__ == '__main__':
     app.run(debug=True)
-
