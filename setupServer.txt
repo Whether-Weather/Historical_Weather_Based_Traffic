@@ -29,7 +29,7 @@ sudo nano /etc/nginx/conf.d/flaskserver.conf
         }
 
 
-sudo systemctl restart nginx
+sudo systemctl start nginx
 sudo systemctl status nginx
 
 GUNICORN:

@@ -1,0 +1,57 @@
+1. create aws lightsail instance of your choice
+2. download and update permissions of certificate for ssh
+    a. "chmod 400 LightsailDefaultKey-us-west-2.pem"
+
+3. ssh -i /Users/joshkelleran/Downloads/LightsailDefaultKey-us-west-2.pem ec2-user@35.93.65.80
+4. paste in format for flask app with data -> keep venv in flask folder
+5. server_requirements.txt install with pip (make venv!!)
+6. pip install gunicorn
+7.sudo nano /etc/systemd/system/flaskserver.service
+    7a. 
+        [Unit]
+        Description=Gunicorn instance to serve flaskserver
+        After=network.target
+
+        [Service]
+        User=ec2-user
+        Group=nginx
+        WorkingDirectory=/home/ec2-user/HWBT/src/flask
+        Environment="PATH=/home/ec2-user/HWBT/src/flask/venv/bin"
+        ExecStart=/home/ec2-user/HWBT/src/flask/venv/bin/gunicorn --workers 4 --bind unix:/home/ec2-user/HWBT/src/flask/flaskserver.sock app:app --log-level error --error-logfile /var/log/gunicorn/gunicorn_error.log
+
+
+        [Install]
+        WantedBy=multi-user.target
+
+8. sudo amazon-linux-extras install nginx1.12
+9. sudo nano /etc/nginx/conf.d/flaskserver.conf
+    9a. 
+        server {
+            listen 80;
+            server_name www.api.whetherweather.org localhost;
+
+            location / {
+                proxy_pass http://unix:/home/ec2-user/HWBT/src/flask/flaskserver.sock;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+10. sudo systemctl start nginx
+11. sudo systemctl status nginx
+12. sudo mkdir -p /var/log/gunicorn/
+13. sudo chown ec2-user:ec2-user /var/log/gunicorn/
+14. sudo systemctl start flaskserver
+15. sudo systemctl status flaskserver 
+16. curl http://www.whetherweather.org -> doesnt work yet -> update google domain ip address
+17. pip install certbot
+18. pip install certbot-nginx
+19. pip install 'urllib3<2'
+20. sudo /home/ec2-user/HWBT/src/flask/venv/bin/certbot --nginx -d www.api.whetherweather.org
+21. curl https://www.whetherweather.org
+22. 
+
+
+
+ 

@@ -16,8 +16,8 @@ if gen_dir not in sys.path:
 
 
 app = Flask(__name__)
-CORS(app)
-# CORS(app, resources={r"/*": {"origins": "https://whether-weather.github.io"}})
+# CORS(app)
+CORS(app, resources={r"/*": {"origins": "https://www.WhetherWeather.org"}})
   
 
 
