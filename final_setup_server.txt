@@ -2,7 +2,7 @@
 2. download and update permissions of certificate for ssh
     a. "chmod 400 LightsailDefaultKey-us-west-2.pem"
 
-3. ssh -i /Users/joshkelleran/Downloads/LightsailDefaultKey-us-west-2.pem ec2-user@35.93.65.80
+3. ssh -i LightsailDefaultKey-us-west-2.pem ec2-user@ip address
 4. paste in format for flask app with data -> keep venv in flask folder
 5. server_requirements.txt install with pip (make venv!!)
 6. pip install gunicorn
@@ -39,6 +39,7 @@
             }
         }
 10. sudo systemctl start nginx
+sudo systemctl restart nginx
 11. sudo systemctl status nginx
 12. sudo mkdir -p /var/log/gunicorn/
 13. sudo chown ec2-user:ec2-user /var/log/gunicorn/
@@ -49,9 +50,12 @@
 18. pip install certbot-nginx
 19. pip install 'urllib3<2'
 20. sudo /home/ec2-user/HWBT/src/flask/venv/bin/certbot --nginx -d www.api.whetherweather.org
-21. curl https://www.whetherweather.org
+21. curl https://www.api.whetherweather.org
 22. 
 
 
+sudo chown -R ec2-user:nginx /home/ec2-user/HWBT/src/flask/run
+sudo chmod 750 /home/ec2-user/HWBT/src/flask/run
+sudo chmod 660 /home/ec2-user/HWBT/src/flask/run/flaskserver.sock
 
- 
+ curl http://www.api.whetherweather.org/

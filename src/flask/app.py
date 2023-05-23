@@ -20,13 +20,21 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "https://www.WhetherWeather.org"}})
   
 
+current_county_data = None
+current_county = None
 
 def get_files(model_county):
+    global current_county
+    global current_county_data
     print(model_county)
     if model_county == "San Jose, CA":
         county = "SantaClara"
     elif model_county == "Harris County, Texas":
         county = "HarrisCounty"
+    
+    if county == current_county:
+        return current_county_data
+
     models_directory = gen_dir + "/data/created_data/" + county  + "/"
     models_filename = models_directory + county + "_model.pkl"
     with open(models_filename, "rb") as f:
@@ -45,10 +53,13 @@ def get_files(model_county):
         "segid_speeds": segid_speeds,
         "geojson": geojson
     }
+    current_county = county
+    current_county_data = county_data
     return county_data
 
-
-data_dict = get_files("San Jose, CA")
+@app.route('/')
+def hello_world():
+    return 'Hello, World!\n'
 
 
 @app.route('/get-model', methods=['POST'])

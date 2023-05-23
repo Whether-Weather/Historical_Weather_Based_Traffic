@@ -1,5 +1,6 @@
 
 # Use the official Python image as the base image
+### this only runs some of the files -> not everything
 FROM python:3.10-slim
 
 # Set the working directory
